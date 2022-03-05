@@ -1,4 +1,5 @@
 import Blob "mo:base/Blob";
+import HashMap "mo:base/HashMap";
 import List "mo:base/List";
 import Principal "mo:base/Principal";
 
@@ -8,25 +9,35 @@ import Ledger "Ledger";
 shared({caller}) actor class Rex(
     LEDGER_ID : Text,
 ) = this {
+    /// 🧪 e2e tests.
+    let version = 1;
+
     private let ledger : Ledger.Interface = actor(LEDGER_ID);
 
+    /// List of admins.
     private stable var admins : List.List<Principal> = ?(caller, null);
 
-    /// @modifier
+    // 1 ICP = 1_00_000_000 (e8s).
+    private stable var price : Nat64 = 1_00000000;
+
+    /// 🛑 @modifier
     private func isAdmin(caller : Principal) {
         assert(List.find(admins, func (p : Principal) : Bool { p == caller }) != null);
     };
 
+    /// 🛑
     public shared({caller}) func addAdmin(a : Principal) {
         isAdmin(caller);
         admins := ?(a, admins);
     };
 
+    /// 🛑
     public shared({caller}) func removeAdmin(a : Principal) {
         isAdmin(caller);
         admins := List.filter(admins, func (p : Principal) : Bool { p != a });
     };
 
+    /// 🛑
     public query({caller}) func getAdmins() : async [Principal] {
         isAdmin(caller);
         List.toArray(admins);
@@ -40,11 +51,10 @@ shared({caller}) actor class Rex(
         Account.getAccount(Principal.fromActor(this), p);
     };
 
-    public shared({caller}) func balance() : async Nat64 {
-        let { e8s } = await ledger.account_balance({
+    public shared({caller}) func balance() : async Ledger.Tokens {
+        await ledger.account_balance({
             account = personalAccountOfPrincipal(caller);
         });
-        e8s;
     };
 
     public shared({caller}) func transfer(amount : Nat64, to : Text) : async Ledger.TransferResult {
