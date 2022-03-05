@@ -1,3 +1,3 @@
 #!/bin/bash
 
-DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy
+DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy progenitus --argument "(\"ryjl3-tyaaa-aaaaa-aaaba-cai\")"
