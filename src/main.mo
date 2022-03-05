@@ -9,7 +9,7 @@ actor class Rex(
 ) = this {
     private let ledger : Ledger.Interface = actor(LEDGER_ID);
 
-    public query({caller}) func getPersonalAcccount() : async Text {
+    public query({caller}) func getPersonalAccount() : async Text {
         Account.toText(personalAccountOfPrincipal(caller));
     };
 
