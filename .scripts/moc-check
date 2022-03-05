@@ -1,0 +1,7 @@
+#!/bin/bash
+
+function check {
+    $(vessel bin)/moc $(vessel sources) --check "$1"
+}
+
+check "$@"
