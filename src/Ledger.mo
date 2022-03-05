@@ -5,7 +5,7 @@ module Ledger {
     };
 
     // Number of nanoseconds from the UNIX epoch in UTC timezone.
-    type TimeStamp = {
+    public type TimeStamp = {
         timestamp_nanos: Nat64;
     };
 
@@ -16,11 +16,11 @@ module Ledger {
     // Subaccount is an arbitrary 32-byte byte array.
     // Ledger uses subaccounts to compute the source address, which enables one
     // principal to control multiple ledger accounts.
-    type SubAccount = Blob;
+    public type SubAccount = Blob;
 
 
     // Sequence number of a block produced by the ledger.
-    type BlockIndex = Nat64;
+    public type BlockIndex = Nat64;
 
     // Arguments for the `account_balance` call.
     public type AccountBalanceArgs = {
@@ -29,7 +29,7 @@ module Ledger {
 
     // An arbitrary number associated with a transaction.
     // The caller can set it in a `transfer` call as a correlation identifier.
-    type Memo = Nat64;
+    public type Memo = Nat64;
 
     // Arguments for the `transfer` call.
     public type TransferArgs = {
@@ -53,7 +53,7 @@ module Ledger {
         created_at_time: ?TimeStamp;
     };
 
-    type TransferError = {
+    public type TransferError = {
         // The fee that the caller specified in the transfer request was not the one that ledger expects.
         // The caller can change the transfer fee to the `expected_fee` and retry the request.
         #BadFee : { expected_fee : Tokens; };

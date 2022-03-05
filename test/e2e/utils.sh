@@ -33,3 +33,9 @@ notEqual() {
 replace() {
     sed -i 's/let version = [0-9]*;/let version = '$1';/' ./src/main.mo
 }
+
+deploy() {
+    DFX_MOC_PATH="$(vessel bin)/moc" dfx -q deploy mock_ledger
+    ledgerId=$(dfx canister id mock_ledger)
+    DFX_MOC_PATH="$(vessel bin)/moc" dfx -q deploy progenitus --argument "(\"$ledgerId\")"
+}

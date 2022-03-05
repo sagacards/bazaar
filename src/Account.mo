@@ -8,6 +8,14 @@ import SHA224 "mo:crypto/SHA/SHA224";
 
 /// Account (~ Account Identifier)
 module Account {
+    public type Account = AId.AccountIdentifier;
+
+    public func zeroAccount(
+        canisterId : Principal
+    ) : Blob {
+        AId.fromPrincipal(canisterId, null);
+    };
+
     public func getAccount(
         canisterId  : Principal,
         principalId : Principal,

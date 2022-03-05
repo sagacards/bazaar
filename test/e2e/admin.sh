@@ -12,7 +12,7 @@ userPrincipal=$(dfx identity get-principal)
 dfx identity use admin
 adminPrincipal=$(dfx identity get-principal)
 
-./.scripts/dfx-deploy
+deploy
 
 admin1="$(dfx canister call progenitus getAdmins)"
 dfx canister call progenitus addAdmin "(principal \"$userPrincipal\")"
@@ -22,7 +22,7 @@ notEqual "$admin1" "$admin2"
 
 replace "1"
 
-./.scripts/dfx-deploy
+deploy
 
 equal "$admin2" "$(dfx canister call progenitus getAdmins)"
 
