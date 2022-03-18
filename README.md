@@ -4,7 +4,7 @@
 
 ## Project Structure
 
-```
+```text
 ./
 ├── src
 └── test

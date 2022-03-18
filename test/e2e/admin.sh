@@ -12,6 +12,7 @@ userPrincipal=$(dfx identity get-principal)
 dfx identity use admin
 adminPrincipal=$(dfx identity get-principal)
 
+add_version
 deploy
 
 admin1="$(dfx canister call progenitus getAdmins)"
@@ -20,10 +21,10 @@ admin2="$(dfx canister call progenitus getAdmins)"
 
 notEqual "$admin1" "$admin2"
 
-replace "1"
-
-deploy
+replace_version "1"
+redeploy
 
 equal "$admin2" "$(dfx canister call progenitus getAdmins)"
 
+remove_version
 dfx -q stop > /dev/null 2>&1

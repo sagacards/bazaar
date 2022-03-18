@@ -4,23 +4,22 @@ import List "mo:base/List";
 import Principal "mo:base/Principal";
 
 import Account "Account";
+import Interface "Interface";
 import Ledger "Ledger";
 
 shared({caller}) actor class Rex(
     LEDGER_ID : Text,
-) = this {
-    /// 🧪 e2e tests.
-    let version = 1;
-
+    NFT_ID    : Text,
+) : async Interface.Interface = this {
     private let ledger : Ledger.Interface = actor(LEDGER_ID);
+    private let nft : Interface.DIP721Interface = actor(NFT_ID);
 
     /// List of admins.
     private stable var admins : List.List<Principal> = ?(caller, null);
 
-    private let locked = HashMap.HashMap<Principal, Nat64>(0, Principal.equal, Principal.hash);
-
     // 1 ICP = 1_00_000_000 (e8s).
-    private stable var price : Nat64 = 1_00000000;
+    private stable var price : Ledger.Tokens = { e8s = 1_00000000 };
+    private stable var availableTokens : [Nat] = [];
 
     /// 🛑 @modifier
     private func isAdmin(caller : Principal) {
@@ -46,33 +45,26 @@ shared({caller}) actor class Rex(
     };
 
     /// 🛑
-    public shared({caller}) func setPrice(e8s: Nat64) {
+    public shared({caller}) func setPrice(e8s : Ledger.Tokens) {
         isAdmin(caller);
         price := e8s;
     };
 
     /// 🛑
-    public shared({caller}) func unlockAccountBalance(p : Principal, amount: ?Nat64) {
-        isAdmin(caller);
-        switch (locked.get(p)) {
-            case (? e8s) {
-                let a = switch (amount) {
-                    case (? a)  a;
-                    case (null) e8s;
-                };
-                if (e8s <= a) { locked.delete(p) } else { locked.put(p, e8s - a) };
-            };
-            case (null) {};
+    public shared({caller}) func syncAvailableTokens() {
+        switch (await nft.ownerTokenIds(Principal.fromActor(this))) {
+            case (#Ok(tokenIds)) availableTokens := tokenIds;
+            case (_) assert(false);
         };
     };
 
-    public query func getPrice() : async Nat64 { price };
+    public query func getPrice() : async Ledger.Tokens { price };
 
-    public query({caller}) func getPersonalAccount() : async Account.Account {
+    public query({caller}) func getPersonalAccount() : async Ledger.AccountIdentifier {
         personalAccountOfPrincipal(caller);
     };
 
-    private func personalAccountOfPrincipal(p : Principal) : Account.Account {
+    private func personalAccountOfPrincipal(p : Principal) : Ledger.AccountIdentifier {
         Account.getAccount(Principal.fromActor(this), p);
     };
 
@@ -82,47 +74,13 @@ shared({caller}) actor class Rex(
         });
     };
 
-    public query({caller}) func lockedBalance() : async Ledger.Tokens {
-        switch (locked.get(caller)) {
-            case (? e8s) return { e8s };
-            case (null)  return { e8s = 0 };
-        };
-    };
-
-    public shared({caller}) func lockBalance() : async Ledger.TransferResult {
-        switch (locked.get(caller)) {
-            case (? _)  assert(false);
-            case (null) {};
-        };
-        let result = await ledger.transfer({
-            memo            = 0;
-            amount          = { e8s = price };
-            fee             = { e8s = 10_000 };
-            from_subaccount = ?Blob.fromArray(Account.principal2SubAccount(caller));
-            to              = Account.zeroAccount(Principal.fromActor(this));
-            created_at_time = null;
-        });
-        switch (result) {
-            case (#Ok(_)) locked.put(caller, price);
-            case (_)      {};
-        };
-        return result;
-    };
-
-    public shared({caller}) func transfer(amount : Nat64, to : Text) : async Ledger.TransferResult {
-        let accountId = switch(Account.fromText(to)) {
-            case (#err(_)) {
-                assert(false);
-                loop {};
-            };
-            case (#ok(a)) a;
-        };
+    public shared({caller}) func transfer(amount : Ledger.Tokens, to : Ledger.AccountIdentifier) : async Ledger.TransferResult {
         await ledger.transfer({
             memo            = 0;
-            amount          = { e8s = amount };
+            amount;
             fee             = { e8s = 10_000 };
             from_subaccount = ?Blob.fromArray(Account.principal2SubAccount(caller));
-            to              = accountId;
+            to;
             created_at_time = null;
         });
     };

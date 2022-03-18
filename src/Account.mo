@@ -6,20 +6,20 @@ import CRC32 "mo:hash/CRC32";
 import Principal "mo:base/Principal";
 import SHA224 "mo:crypto/SHA/SHA224";
 
+import Ledger "Ledger";
+
 /// Account (~ Account Identifier)
 module Account {
-    public type Account = AId.AccountIdentifier;
-
     public func zeroAccount(
         canisterId : Principal
-    ) : Blob {
+    ) : Ledger.AccountIdentifier {
         AId.fromPrincipal(canisterId, null);
     };
 
     public func getAccount(
         canisterId  : Principal,
         principalId : Principal,
-    ) : Blob {
+    ) : Ledger.AccountIdentifier {
         let subAccount = principal2SubAccount(principalId);
         AId.fromPrincipal(canisterId, ?subAccount);
     };
