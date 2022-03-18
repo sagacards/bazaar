@@ -1,0 +1,3 @@
+[submodule "progenitus-client"]
+	path = progenitus-client
+	url = git@github.com:sagacards/progenitus-client.git
