@@ -1,3 +1,18 @@
 #!/bin/bash
 
-DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy --network=ic progenitus --argument "(\"ryjl3-tyaaa-aaaaa-aaaba-cai\")"
+function deploy {
+    if [ "$1" == "ic" ]; then
+        echo "Deploying to mainnet!..."
+        DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy --no-wallet --network=ic mock_nft
+        nftId=$(dfx canister id mock_nft)
+        DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy --no-wallet --network=ic progenitus --argument "(\"ryjl3-tyaaa-aaaaa-aaaba-cai\", \"$nftId\")"
+    else
+        DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy mock_ledger
+        DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy mock_nft
+        ledgerId=$(dfx canister id mock_ledger)
+        nftId=$(dfx canister id mock_nft)
+        DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy progenitus --argument "(\"$ledgerId\", \"$nftId\")"
+    fi
+}
+
+deploy "$@"
