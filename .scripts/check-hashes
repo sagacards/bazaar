@@ -1,0 +1,13 @@
+#!/bin/bash
+
+dfx start --background --clean > /dev/null 2>&1
+./.scripts/dfx-deploy > /dev/null 2>&1
+mainnet=$(dfx canister --network=ic info progenitus | sed -n 2p)
+echo $mainnet
+latest=$(dfx canister info progenitus | sed -n 2p)
+echo $latest
+if [[ "$mainnet" != "$latest" ]]; then
+    echo "Module hashes do not match..."
+    exit 1
+fi
+dfx stop > /dev/null 2>&1

@@ -2,7 +2,6 @@
 
 function deploy {
     if [ "$1" == "ic" ]; then
-        echo "Deploying to mainnet!..."
         DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy --no-wallet --network=ic mock_nft
         nftId=$(dfx canister id mock_nft)
         DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy --no-wallet --network=ic progenitus --argument "(\"ryjl3-tyaaa-aaaaa-aaaba-cai\", \"$nftId\")"
