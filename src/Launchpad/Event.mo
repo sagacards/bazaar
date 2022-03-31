@@ -15,10 +15,10 @@ module {
     // - `b` and `c` have `5` and `2` spots respectively.
     // - `d` has 1 spot.
     // - `e` will be ignored.
-    public type StableAllowlist = [(Principal, ?Nat)];
+    public type StableAllowlist = [(Principal, ?Int)];
 
     // The internal representation of a StableAllowlist;
-    public type Allowlist = HashMap.HashMap<Principal, ?Nat>;
+    public type Allowlist = HashMap.HashMap<Principal, ?Int>;
 
     public module Allowlist = {
         public func toStable(l : Allowlist) : StableAllowlist = Iter.toArray(
@@ -32,8 +32,8 @@ module {
 
     /// Describes the access of the event.
     public type Access = {
-        // Denotes a public event with a certain number of mints (-1 = unlimited).
-        #Public : Int;
+        // Denotes a public event without restrictions.
+        #Public;
         // Denotes an event with limited access.
         #Private : StableAllowlist;
     };
@@ -60,9 +60,7 @@ module {
     public type CollectionDetails = {
         iconImageUrl           : Text;
         bannerImageUrl         : Text;
-
-        // TODO: are these not too specific (ref. Saga)?
-        cardImageUrl           : Text;
+        previewImageUrl        : Text;
         descriptionMarkdownUrl : Text;
     };
 };
