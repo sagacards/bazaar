@@ -22,21 +22,7 @@ module {
         getEventsOfToken : query (token : Principal) -> async [Event.Data];
     };
 
-    public type ClassInterface = {
-        /// Creates a new event.
-        createEvent : (canister : Principal, data : Event.Data) -> Nat;
-        /// Updates an existing event if present, traps otherwise.
-        updateEvent : (canister : Principal, index : Nat, data : Event.Data) -> ();
-
-        /// Returns all events.
-        getAllEvents : () -> [(Principal, Event.Data)];
-        /// Returns all events for the given tokens.
-        getEvents : (tokens : [Principal]) -> [(Principal, Event.Data)];
-        /// Returns the events for the given token.
-        getEventsOfToken : (token : Principal) -> [Event.Data];
-    };
-
-    public class Launchpad() : ClassInterface {
+    public class Launchpad() {
         let events = HashMap.HashMap<Principal, Buffer.Buffer<Event.Data>>(
             0, Principal.equal, Principal.hash,
         );
