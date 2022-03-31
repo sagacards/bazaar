@@ -57,15 +57,6 @@ module {
         accessType  : Access;
     };
 
-    /// Event describes a launchpad event.
-    public type Event = Data and {
-        // The principal of the token canister.
-        //
-        // FAQ: Why 'Text' instead of 'Principal'?
-        //   A: `let c : = actor(canister);` expects `Text` instead of `Principal`.
-        canister : Text;
-    };
-
     public type CollectionDetails = {
         iconImageUrl           : Text;
         bannerImageUrl         : Text;
