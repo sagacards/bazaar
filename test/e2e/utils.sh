@@ -49,16 +49,15 @@ redeploy() {
     echo "Redeploying..."
     echo "$(dfx canister info progenitus)"
     ledgerId=$(dfx canister id mock_ledger)
-    nftId=$(dfx canister id mock_nft)
-    echo "yes" | DFX_MOC_PATH="$(vessel bin)/moc" dfx -q deploy progenitus --argument "(\"$ledgerId\", \"$nftId\")"
+    echo "yes" | DFX_MOC_PATH="$(vessel bin)/moc" dfx -q deploy progenitus --argument "(\"$ledgerId\")"
     echo "$(dfx canister info progenitus)"
 }
 
 deploy() {
     echo "Deploying..."
     DFX_MOC_PATH="$(vessel bin)/moc" dfx -q deploy mock_ledger
-    DFX_MOC_PATH="$(vessel bin)/moc" dfx -q deploy mock_nft
     ledgerId=$(dfx canister id mock_ledger)
-    nftId=$(dfx canister id mock_nft)
-    DFX_MOC_PATH="$(vessel bin)/moc" dfx -q deploy progenitus --argument "(\"$ledgerId\", \"$nftId\")"
+    DFX_MOC_PATH="$(vessel bin)/moc" dfx -q deploy progenitus --argument "(\"$ledgerId\")"
+    progenitusId=$(dfx canister id progenitus)
+    DFX_MOC_PATH="$(vessel bin)/moc" dfx -q deploy mock_nft --argument "(\"$progenitusId\")"
 }

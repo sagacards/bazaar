@@ -10,7 +10,7 @@ module {
     private type EventName = Text;
 
     // The public representation of an allowlist.
-    // e.g. [(a, -1),  (b, 5), (c, 2), (d, 1), (e, null)];
+    // e.g. [(a, ?-1),  (b, ?5), (c, ?2), (d, ?1), (e, null)];
     // - `a` has unlimited access.
     // - `b` and `c` have `5` and `2` spots respectively.
     // - `d` has 1 spot.
@@ -37,6 +37,8 @@ module {
         // Denotes an event with limited access.
         #Private : StableAllowlist;
     };
+
+    public type Events = [(Principal, Data)];
 
     public type Data = {
         // Name of the event.

@@ -15,9 +15,9 @@ module {
         /// Returns all events of the {caller}.
         getOwnEvents : query () -> async [Event.Data];
         /// Returns all events.
-        getAllEvents : query () -> async [Event.Data];
+        getAllEvents : query () -> async Event.Events;
         /// Returns all events for the given tokens.
-        getEvents : query (tokens : [Principal]) -> async [Event.Data];
+        getEvents : query (tokens : [Principal]) -> async Event.Events;
         /// Returns the events for the given token.
         getEventsOfToken : query (token : Principal) -> async [Event.Data];
     };
@@ -53,11 +53,11 @@ module {
             };
         };
 
-        public func getAllEvents() : StableEvents {
+        public func getAllEvents() : Event.Events {
             Events.toStable(events);
         };
 
-        public func getEvents(tokens : [Principal]) : [(Principal, Event.Data)] {
+        public func getEvents(tokens : [Principal]) : Event.Events {
             Events.toStableFilter(events, tokens);
         };
 
@@ -69,12 +69,11 @@ module {
         };
     };
 
-    private type Events = HashMap.HashMap<Principal, Buffer.Buffer<Event.Data>>;
+    private type EventsMap = HashMap.HashMap<Principal, Buffer.Buffer<Event.Data>>;
     private type EventsTuple = (Principal, Buffer.Buffer<Event.Data>);
-    private type StableEvents = [(Principal, Event.Data)];
 
     private module Events = {
-        public func toStable(events : Events) : StableEvents {
+        public func toStable(events : EventsMap) : Event.Events {
             let buffer = Buffer.Buffer<(Principal, Event.Data)>(size(events));
             for ((p, b) in events.entries()) {
                 for (d in b.vals()) buffer.add((p, d));
@@ -82,7 +81,7 @@ module {
             buffer.toArray();
         };
 
-        public func toStableFilter(events : Events, tokens : [Principal]) : StableEvents {
+        public func toStableFilter(events : EventsMap, tokens : [Principal]) : Event.Events {
             let filter = func ((p, _) : EventsTuple) : Bool {
                 for (t in tokens.vals()) if (t == p) return true;
                 false;
@@ -95,19 +94,19 @@ module {
             buffer.toArray();
         };
 
-        private func size(events : Events) : Nat {
+        private func size(events : EventsMap) : Nat {
             var size = 0;
             for ((_, b) in events.entries()) size += b.size();
             size;
         };
 
-        private func sizeFilter(events : Events, f : (e : EventsTuple) -> Bool) : Nat {
+        private func sizeFilter(events : EventsMap, f : (e : EventsTuple) -> Bool) : Nat {
             var size = 0;
             for ((p, b) in events.entries()) if (f((p, b))) size += b.size();
             size;
         };
 
-        private func entriesFilter(events : Events, f : (e : EventsTuple) -> Bool) : Iter.Iter<EventsTuple> {
+        private func entriesFilter(events : EventsMap, f : (e : EventsTuple) -> Bool) : Iter.Iter<EventsTuple> {
             Iter.filter(events.entries(), f);
         };
     };
