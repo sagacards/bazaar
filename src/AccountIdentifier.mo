@@ -1,4 +1,4 @@
-import AId "mo:principal/blob/AccountIdentifier";
+import AccountIdentifier "mo:principal/blob/AccountIdentifier";
 import Array "mo:base/Array";
 import Blob "mo:base/Blob";
 import Binary "mo:encoding/Binary";
@@ -8,26 +8,29 @@ import SHA224 "mo:crypto/SHA/SHA224";
 
 import Ledger "Ledger";
 
-/// Account (~ Account Identifier)
-module Account {
+module {
+    /// Returns the zero account of the given principal identifier.
     public func zeroAccount(
-        canisterId : Principal
+        principalId : Principal
     ) : Ledger.AccountIdentifier {
-        AId.fromPrincipal(canisterId, null);
+        AccountIdentifier.fromPrincipal(principalId, null);
     };
 
+    /// Returns a sub account of the given canister based on the given principal id.
     public func getAccount(
         canisterId  : Principal,
         principalId : Principal,
     ) : Ledger.AccountIdentifier {
         let subAccount = principal2SubAccount(principalId);
-        AId.fromPrincipal(canisterId, ?subAccount);
+        AccountIdentifier.fromPrincipal(canisterId, ?subAccount);
     };
 
-    public let toText   = AId.toText;
-    public let fromText = AId.fromText;
+    public let toText   = AccountIdentifier.toText;
+    public let fromText = AccountIdentifier.fromText;
 
-    public func principal2SubAccount(p : Principal) : AId.SubAccount {
+    // Converts the given principal to a sub account (32 bytes).
+    // First 4 bytes are the checksum of the SHA224 hash of the principal.
+    public func principal2SubAccount(p : Principal) : AccountIdentifier.SubAccount {
         let hash  = SHA224.sum(Blob.toArray(Principal.toBlob(p)));    // [28]
         let check = Binary.BigEndian.fromNat32(CRC32.checksum(hash)); // [04]
         Array.tabulate<Nat8>(32, func (i : Nat) : Nat8 {

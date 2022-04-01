@@ -1,18 +1,20 @@
 import Blob "mo:base/Blob";
+import Cycles "mo:base/ExperimentalCycles";
 import HashMap "mo:base/HashMap";
 import List "mo:base/List";
 import Principal "mo:base/Principal";
 
-import Account "Account";
+import AccountIdentifier "AccountIdentifier";
+import Event "Launchpad/Event";
 import Interface "Interface";
+import Launchpad "Launchpad";
 import Ledger "Ledger";
+import NFT "Launchpad/NFT";
 
 shared({caller}) actor class Rex(
     LEDGER_ID : Text,
-    NFT_ID    : Text,
-) : async Interface.Interface = this {
+) : async Interface.Main = this {
     private let ledger : Ledger.Interface = actor(LEDGER_ID);
-    private let nft : Interface.DIP721Interface = actor(NFT_ID);
 
     /// List of admins.
     private stable var admins : List.List<Principal> = ?(caller, null);
@@ -20,6 +22,8 @@ shared({caller}) actor class Rex(
     // 1 ICP = 1_00_000_000 (e8s).
     private stable var price : Ledger.Tokens = { e8s = 1_00000000 };
     private stable var availableTokens : [Nat] = [];
+
+    // 🛑 ADMIN
 
     /// 🛑 @modifier
     private func isAdmin(caller : Principal) {
@@ -50,13 +54,7 @@ shared({caller}) actor class Rex(
         price := e8s;
     };
 
-    /// 🛑
-    public shared({caller}) func syncAvailableTokens() {
-        switch (await nft.ownerTokenIds(Principal.fromActor(this))) {
-            case (#Ok(tokenIds)) availableTokens := tokenIds;
-            case (_) assert(false);
-        };
-    };
+    // 🟢 PUBLIC
 
     public query func getPrice() : async Ledger.Tokens { price };
 
@@ -65,7 +63,7 @@ shared({caller}) actor class Rex(
     };
 
     private func personalAccountOfPrincipal(p : Principal) : Ledger.AccountIdentifier {
-        Account.getAccount(Principal.fromActor(this), p);
+        AccountIdentifier.getAccount(Principal.fromActor(this), p);
     };
 
     public shared({caller}) func balance() : async Ledger.Tokens {
@@ -79,9 +77,48 @@ shared({caller}) actor class Rex(
             memo            = 0;
             amount;
             fee             = { e8s = 10_000 };
-            from_subaccount = ?Blob.fromArray(Account.principal2SubAccount(caller));
+            from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(caller));
             to;
             created_at_time = null;
         });
+    };
+
+    // 🚀 LAUNCHPAD
+
+    private let lp = Launchpad.Launchpad();
+
+    private let createEventPrice = 1_000_000_000_000; // 1T;
+    private let updateEventPrice = 0_500_000_000_000;
+
+    private func chargeCycles(amount : Nat) : Bool {
+        if (Cycles.available() < amount)        return false;
+        if (Cycles.accept(amount) < amount) return false;
+        true;
+    };
+
+    public shared({caller}) func createEvent(data : Event.Data) : async Nat {
+        assert(chargeCycles(createEventPrice));
+        lp.createEvent(caller, data);
+    };
+
+    public shared({caller}) func updateEvent(index : Nat, data : Event.Data) : async () {
+        assert(chargeCycles(updateEventPrice));
+        lp.updateEvent(caller, index, data);
+    };
+
+    public query({caller}) func getOwnEvents() : async [Event.Data] {
+        lp.getEventsOfToken(caller);
+    };
+
+    public query func getAllEvents() : async Event.Events {
+        lp.getAllEvents();
+    };
+
+    public query func getEvents(tokens : [Principal]) : async Event.Events {
+        lp.getEvents(tokens);
+    };
+
+    public query func getEventsOfToken(token : Principal) : async [Event.Data] {
+        lp.getEventsOfToken(token);
     };
 };
