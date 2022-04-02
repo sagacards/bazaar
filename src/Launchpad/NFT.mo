@@ -6,6 +6,7 @@ module {
     public type MintError = {
         // Indicates that there are no NFTs available anymore.
         #NoneAvailable;
+        #TryCatchTrap;
     };
 
     public type Interface = actor {
