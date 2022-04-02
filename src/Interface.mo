@@ -19,6 +19,7 @@ module Interface {
         getPersonalAccount : query () -> async Ledger.AccountIdentifier;
         balance : shared () -> async Ledger.Tokens;
         transfer : shared (amount : Ledger.Tokens, to : Ledger.AccountIdentifier) -> async Ledger.TransferResult;
+        mint : shared (token : Principal, index : Nat) -> async Nat;
     };
 
     public type Main = Admin and Account and Launchpad.Interface;

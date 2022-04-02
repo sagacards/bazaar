@@ -3,6 +3,7 @@ import Cycles "mo:base/ExperimentalCycles";
 import HashMap "mo:base/HashMap";
 import List "mo:base/List";
 import Principal "mo:base/Principal";
+import Result "mo:base/Result";
 
 import AccountIdentifier "AccountIdentifier";
 import Event "Launchpad/Event";
@@ -57,6 +58,10 @@ shared({caller}) actor class Rex(
     // 🟢 PUBLIC
 
     public query({caller}) func getAllowlistSpots(canister : Principal, index : Nat) : async ?Int {
+        spots(caller, canister, index);
+    };
+
+    private func spots(caller : Principal, canister : Principal, index : Nat) : ?Int {
         switch (lp.getEvent(canister, index)) {
             case (null) {
                 assert(false); // invalid event.
@@ -101,6 +106,45 @@ shared({caller}) actor class Rex(
             to;
             created_at_time = null;
         });
+    };
+
+    private func buy(token : Principal, caller : Principal) : async Ledger.TransferResult {
+        await ledger.transfer({
+            memo            = 0;
+            amount          = price;
+            fee             = { e8s = 10_000 };
+            from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(caller));
+            to              = AccountIdentifier.getAccount(Principal.fromActor(this), token);
+            created_at_time = null;
+        });
+    };
+
+    public shared({caller}) func mint(token : Principal, index : Nat) : async Nat {
+        switch (spots(caller, token, index)) {
+            case (null) assert(false);
+            case (? v) if (v == 0) assert(false);
+        };
+        let t : NFT.Interface = actor(Principal.toText(token));
+        let available = await t.launchpadTotalAvailable(index);
+        assert(0 < available);
+        switch (await buy(token, caller)) {
+            case (#Ok(_))  {};
+            case (#Err(_)) assert(false);
+        };
+        // NOTE: from this point onwards, the user has paid!
+        let r = try (await t.launchpadMint(caller)) catch (_) {
+            #err(#TryCatchTrap);
+        };
+        switch (r) {
+            case (#err(_)) {
+                // TODO: refund!
+                assert(false); 0;
+            };
+            case (#ok(n)) {
+                // TODO: lower allowlist entry!
+                n;
+            };
+        };
     };
 
     // 🚀 LAUNCHPAD
