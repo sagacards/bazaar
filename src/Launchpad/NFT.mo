@@ -19,7 +19,7 @@ module {
         // 🚀 LAUNCHPAD RESTRICTED
 
         // Returns the total available nfts.
-        launchpadTotalAvailable : query () -> async Nat;
+        launchpadTotalAvailable : query (index : Nat) -> async Nat;
         // Allows the launchpad to mint a (random) NFT to the given principal.
         // @returns : the NFT id.
         // @traps   : not authorized.

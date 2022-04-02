@@ -1,4 +1,4 @@
 {
-  dependencies = [ "base", "crypto", "dip", "encoding", "hash", "principal" ],
+  dependencies = [ "base", "crypto", "encoding", "hash", "principal" ],
   compiler = Some "0.6.22"
 }

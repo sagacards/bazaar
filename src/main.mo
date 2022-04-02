@@ -56,6 +56,26 @@ shared({caller}) actor class Rex(
 
     // 🟢 PUBLIC
 
+    public query({caller}) func getAllowlistSpots(canister : Principal, index : Nat) : async ?Int {
+        switch (lp.getEvent(canister, index)) {
+            case (null) {
+                assert(false); // invalid event.
+                null;
+            };
+            case (? { accessType }) {
+                switch (accessType) {
+                    case (#Public) return ?-1;
+                    case (#Private(list)) {
+                        for ((p, v) in list.vals()) {
+                            if (p == caller) return v;
+                        };
+                        null;
+                    };
+                };
+            };
+        };
+    };
+
     public query func getPrice() : async Ledger.Tokens { price };
 
     public query({caller}) func getPersonalAccount() : async Ledger.AccountIdentifier {
@@ -104,6 +124,10 @@ shared({caller}) actor class Rex(
     public shared({caller}) func updateEvent(index : Nat, data : Event.Data) : async () {
         assert(chargeCycles(updateEventPrice));
         lp.updateEvent(caller, index, data);
+    };
+
+    public query func getEvent(token : Principal, index : Nat) : async ?Event.Data {
+        lp.getEvent(token, index);
     };
 
     public query({caller}) func getOwnEvents() : async [Event.Data] {

@@ -12,6 +12,8 @@ module {
         createEvent : shared (data : Event.Data) -> async Nat;
         /// Updates an existing event.
         updateEvent : shared (index : Nat, data : Event.Data) -> async ();
+        /// Returns a specific event for the given token.
+        getEvent : query (token : Principal, index : Nat) -> async ?Event.Data;
         /// Returns all events of the {caller}.
         getOwnEvents : query () -> async [Event.Data];
         /// Returns all events.
@@ -49,6 +51,20 @@ module {
                 case (? b) {
                     assert(index < b.size());
                     b.put(index, data);
+                };
+            };
+        };
+
+        public func getEvent(token : Principal, index : Nat) : ?Event.Data {
+            switch (events.get(token)) {
+                case (null) null;
+                case (? b) {
+                    var i = 0;
+                    for (v in b.vals()) {
+                        if (i == index) return ?v;
+                        i += 1;
+                    };
+                    null;
                 };
             };
         };

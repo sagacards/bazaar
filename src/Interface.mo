@@ -1,5 +1,3 @@
-import DIP721 "mo:dip/DIP721";
-
 import AccountIdentifier "AccountIdentifier";
 import Ledger "Ledger";
 
@@ -16,6 +14,7 @@ module Interface {
 
     /// 🟢 Public functions.
     public type Account = actor {
+        getAllowlistSpots : query (token : Principal, index : Nat) -> async ?Int;
         getPrice : query () -> async Ledger.Tokens;
         getPersonalAccount : query () -> async Ledger.AccountIdentifier;
         balance : shared () -> async Ledger.Tokens;
