@@ -15,6 +15,10 @@
         "mock_nft": {
             "main": "test/mock/NFT.mo",
             "type": "motoko"
+        },
+        "mock_nft_staging": {
+            "main": "test/mock/NFT.mo",
+            "type": "motoko"
         }
     },
     "defaults": {
