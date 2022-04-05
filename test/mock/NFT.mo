@@ -24,7 +24,7 @@ shared({caller = owner}) actor class MockNFT(
         #ok(i - 1);
     };
 
-    public query({caller}) func launchpadTotalAvailable() : async Nat {
+    public query({caller}) func launchpadTotalAvailable(event : Nat) : async Nat {
         assert(caller == Principal.fromActor(lp));
         total - i;
     };
