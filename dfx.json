@@ -4,6 +4,10 @@
             "main": "src/main.mo",
             "type": "motoko"
         },
+        "staging": {
+            "main": "src/main.mo",
+            "type": "motoko"
+        },
         "mock_ledger": {
             "main": "test/mock/Ledger.mo",
             "type": "motoko"
