@@ -38,7 +38,7 @@ module {
         #Private : StableAllowlist;
     };
 
-    public type Events = [(Principal, Data)];
+    public type Events = [(Principal, Data, Nat)];
 
     public type Data = {
         // Name of the event.

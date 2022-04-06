@@ -90,9 +90,13 @@ module {
 
     private module Events = {
         public func toStable(events : EventsMap) : Event.Events {
-            let buffer = Buffer.Buffer<(Principal, Event.Data)>(size(events));
+            let buffer = Buffer.Buffer<(Principal, Event.Data, Nat)>(size(events));
+            var i = 0;
             for ((p, b) in events.entries()) {
-                for (d in b.vals()) buffer.add((p, d));
+                for (d in b.vals()) {
+                    buffer.add((p, d, i));
+                    i += 1;
+                };
             };
             buffer.toArray();
         };
@@ -103,9 +107,13 @@ module {
                 false;
             };
 
-            let buffer = Buffer.Buffer<(Principal, Event.Data)>(sizeFilter(events, filter));
+            let buffer = Buffer.Buffer<(Principal, Event.Data, Nat)>(sizeFilter(events, filter));
+            var i = 0;
             for ((p, b) in entriesFilter(events, filter)) {
-                for (d in b.vals()) buffer.add((p, d));
+                for (d in b.vals()) {
+                    buffer.add((p, d, i));
+                    i += 1;
+                };
             };
             buffer.toArray();
         };
