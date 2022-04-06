@@ -119,7 +119,7 @@ shared({caller}) actor class Rex(
         });
     };
 
-    public shared({caller}) func mint(token : Principal, index : Nat) : async Nat {
+    public shared({caller}) func mint(token : Principal, index : Nat) : async Result.Result<Nat, Ledger.TransferError> {
         switch (spots(caller, token, index)) {
             case (null) assert(false);
             case (? v) if (v == 0) assert(false);
@@ -131,7 +131,8 @@ shared({caller}) actor class Rex(
         assert(0 < available);
         switch (await buy(token, caller)) {
             case (#Ok(_))  {};
-            case (#Err(_)) assert(false);
+            // NOTE: Failure here: type mismatch: type on the wire rec_1, expect type nat
+            case (#Err(e)) return #err(e);
         };
         // NOTE: from this point onwards, the user has paid!
         let r = try (await t.launchpadMint(caller)) catch (_) {
@@ -140,11 +141,11 @@ shared({caller}) actor class Rex(
         switch (r) {
             case (#err(_)) {
                 // TODO: refund!
-                assert(false); 0;
+                assert(false); #ok(0);
             };
             case (#ok(n)) {
                 // TODO: lower allowlist entry!
-                n;
+                #ok(n);
             };
         };
     };
@@ -153,8 +154,8 @@ shared({caller}) actor class Rex(
 
     private let lp = Launchpad.Launchpad();
 
-    private let createEventPrice = 1_000_000_000_000; // 1T;
-    private let updateEventPrice = 0_500_000_000_000;
+    private let createEventPrice = 0; // 1T;
+    private let updateEventPrice = 0;
 
     private func chargeCycles(amount : Nat) : Bool {
         if (Cycles.available() < amount)        return false;
