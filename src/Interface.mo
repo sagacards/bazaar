@@ -1,3 +1,4 @@
+import Result "mo:base/Result";
 import AccountIdentifier "AccountIdentifier";
 import Ledger "Ledger";
 
@@ -19,7 +20,7 @@ module Interface {
         getPersonalAccount : query () -> async Ledger.AccountIdentifier;
         balance : shared () -> async Ledger.Tokens;
         transfer : shared (amount : Ledger.Tokens, to : Ledger.AccountIdentifier) -> async Ledger.TransferResult;
-        mint : shared (token : Principal, index : Nat) -> async Nat;
+        mint : shared (token : Principal, index : Nat) -> async Result.Result<Nat, Ledger.TransferError>;
     };
 
     public type Main = Admin and Account and Launchpad.Interface;
