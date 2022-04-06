@@ -125,7 +125,9 @@ shared({caller}) actor class Rex(
             case (? v) if (v == 0) assert(false);
         };
         let t : NFT.Interface = actor(Principal.toText(token));
+        // NOTE: a million people could end up buying the same token...
         let available = await t.launchpadTotalAvailable(index);
+        // NOTE: Assertions give useless errors. Result please!
         assert(0 < available);
         switch (await buy(token, caller)) {
             case (#Ok(_))  {};
