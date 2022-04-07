@@ -6,7 +6,7 @@ function deploy {
     if [ "$1" == "ic" ]; then
         DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy --no-wallet --network=ic $canister --argument "(\"ryjl3-tyaaa-aaaaa-aaaba-cai\")"
         progenitusId=$(dfx canister --network=ic id $canister)
-        DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy --no-wallet --network=ic mock_nft_staging --argument "(\"$progenitusId\")"
+        DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy --no-wallet --network=ic mock_nft --argument "(\"$progenitusId\")"
     else
         DFX_MOC_PATH="$(vessel bin)/moc" dfx deploy mock_ledger
         ledgerId=$(dfx canister id mock_ledger)
