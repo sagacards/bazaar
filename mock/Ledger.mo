@@ -1,16 +1,32 @@
 import AId "mo:principal/blob/AccountIdentifier";
 import Blob "mo:base/Blob";
 import HashMap "mo:base/HashMap";
-import Ledger "../../src/Ledger";
+import List "mo:base/List";
+import Ledger "../src/Ledger";
 
 shared({caller = owner}) actor class MockLedger() : async Ledger.Interface {
+
+    private stable var admins : List.List<Principal> = ?(owner, null);
+
+    private func isAdmin(caller : Principal) {
+        assert(List.find(admins, func (p : Principal) : Bool { p == caller }) != null);
+    };
+
+    public shared({caller}) func addAdmin(a : Principal) {
+        isAdmin(caller);
+        admins := ?(a, admins);
+    };
+
+    public query func getAdmins() : async [Principal] {
+        List.toArray(admins);
+    };
     
     private var blockIndex : Ledger.BlockIndex = 0;
     private let balances = HashMap.HashMap<AId.AccountIdentifier, Nat64>(0, Blob.equal, Blob.hash);
 
     // Custom Endpoint!
     public shared({caller}) func mint(args : { to : Ledger.AccountIdentifier; amount : Ledger.Tokens }) : async Ledger.BlockIndex {
-        assert(caller == owner);
+        isAdmin(caller);
         switch (balances.get(args.to)) {
             case (null)      balances.put(args.to, args.amount.e8s);
             case (? balance) balances.put(args.to, balance + args.amount.e8s);

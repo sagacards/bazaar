@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "test": "mocha -r ts-node/register 'tests/**/*.ts'"
+    "deploy": "npx ts-node scripts/deploy.ts",
+    "test": "mocha --timeout 10000 -r ts-node/register 'tests/**/*.ts'",
+    "test:dfx": "dfx start --background --clean && ./.scripts/dfx-deploy && npm test && dfx stop"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",

@@ -1,12 +1,14 @@
 import Principal "mo:base/Principal";
 
-import Launchpad "../src/Launchpad";
-import Event "../src/Launchpad/Event";
+import Events "../src/Events";
+import Event "../src/Events/Event";
 
 let nft0 = Principal.fromText("aaaaa-aa");
 let nft1 = Principal.fromText("utpk4-hka");
 
-let lp = Launchpad.Launchpad();
+let lp = Events.Class({
+    events = [];
+});
 
 let emptyDetails = {
     iconImageUrl           = "";
