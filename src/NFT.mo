@@ -1,6 +1,6 @@
 import Result "mo:base/Result";
 
-import Event "Event";
+import Event "Events/Event";
 
 module {
     public type MintError = {

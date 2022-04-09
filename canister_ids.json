@@ -2,13 +2,7 @@
   "mock_nft": {
     "ic": "fkqrm-2qaaa-aaaak-aamzq-cai"
   },
-  "mock_nft_staging": {
-    "ic": "xeuvx-zqaaa-aaaaj-qaswq-cai"
-  },
   "progenitus": {
     "ic": "h7wcp-ayaaa-aaaam-qadqq-cai"
-  },
-  "staging": {
-    "ic": "xdvtd-uiaaa-aaaaj-qaswa-cai"
   }
 }

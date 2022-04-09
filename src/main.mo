@@ -6,11 +6,11 @@ import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
 import AccountIdentifier "AccountIdentifier";
-import Event "Launchpad/Event";
+import Event "Events/Event";
+import Events "Events";
 import Interface "Interface";
-import Launchpad "Launchpad";
 import Ledger "Ledger";
-import NFT "Launchpad/NFT";
+import NFT "NFT";
 
 shared({caller}) actor class Rex(
     LEDGER_ID : Text,
@@ -20,9 +20,23 @@ shared({caller}) actor class Rex(
     /// List of admins.
     private stable var admins : List.List<Principal> = ?(caller, null);
 
-    // 1 ICP = 1_00_000_000 (e8s).
-    private stable var price : Ledger.Tokens = { e8s = 1_00000000 };
-    private stable var availableTokens : [Nat] = [];
+    // 🏗 SYSTEM
+
+    private let emptyState = {
+        var events : Events.StableState = {
+            events = [];
+        };
+    };
+
+    stable var state = emptyState;
+
+    system func preupgrade () {
+        state.events := events.toStable();
+    };
+
+    system func postupgrade() {
+        state := emptyState;
+    };
 
     // 🛑 ADMIN
 
@@ -49,39 +63,32 @@ shared({caller}) actor class Rex(
         List.toArray(admins);
     };
 
-    /// 🛑
-    public shared({caller}) func setPrice(e8s : Ledger.Tokens) {
-        isAdmin(caller);
-        price := e8s;
-    };
-
     // 🟢 PUBLIC
 
     public query({caller}) func getAllowlistSpots(canister : Principal, index : Nat) : async ?Int {
-        spots(caller, canister, index);
+        let (n, _) = spots(caller, canister, index);
+        n;
     };
 
-    private func spots(caller : Principal, canister : Principal, index : Nat) : ?Int {
-        switch (lp.getEvent(canister, index)) {
+    private func spots(caller : Principal, canister : Principal, index : Nat) : (n : ?Int, price : Ledger.Tokens) {
+        switch (events.getEvent(canister, index)) {
             case (null) {
                 assert(false); // invalid event.
-                null;
+                loop {};
             };
-            case (? { accessType }) {
+            case (? { accessType; price }) {
                 switch (accessType) {
-                    case (#Public) return ?-1;
+                    case (#Public) return (?-1, price);
                     case (#Private(list)) {
                         for ((p, v) in list.vals()) {
-                            if (p == caller) return v;
+                            if (p == caller) return (v, price);
                         };
-                        null;
+                        (null, price);
                     };
                 };
             };
         };
     };
-
-    public query func getPrice() : async Ledger.Tokens { price };
 
     public query({caller}) func getPersonalAccount() : async Ledger.AccountIdentifier {
         personalAccountOfPrincipal(caller);
@@ -108,10 +115,10 @@ shared({caller}) actor class Rex(
         });
     };
 
-    private func buy(token : Principal, caller : Principal) : async Ledger.TransferResult {
+    private func buy(amount : Ledger.Tokens, token : Principal, caller : Principal) : async Ledger.TransferResult {
         await ledger.transfer({
             memo            = 0;
-            amount          = price;
+            amount;
             fee             = { e8s = 10_000 };
             from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(caller));
             to              = AccountIdentifier.getAccount(Principal.fromActor(this), token);
@@ -120,16 +127,22 @@ shared({caller}) actor class Rex(
     };
 
     public shared({caller}) func mint(token : Principal, index : Nat) : async Result.Result<Nat, Ledger.TransferError> {
-        switch (spots(caller, token, index)) {
-            case (null) assert(false);
-            case (? v) if (v == 0) assert(false);
+        let price = switch (spots(caller, token, index)) {
+            case (null, _) {
+                assert(false);
+                loop {};
+            };
+            case (? v, price) {
+                if (v == 0) assert(false);
+                price;
+            };
         };
         let t : NFT.Interface = actor(Principal.toText(token));
         // NOTE: a million people could end up buying the same token...
         let available = await t.launchpadTotalAvailable(index);
         // NOTE: Assertions give useless errors. Result please!
         assert(0 < available);
-        switch (await buy(token, caller)) {
+        switch (await buy(price, token, caller)) {
             case (#Ok(_))  {};
             // NOTE: Failure here: type mismatch: type on the wire rec_1, expect type nat
             case (#Err(e)) return #err(e);
@@ -152,7 +165,7 @@ shared({caller}) actor class Rex(
 
     // 🚀 LAUNCHPAD
 
-    private let lp = Launchpad.Launchpad();
+    private let events = Events.Class(state.events);
 
     private let createEventPrice = 0; // 1T;
     private let updateEventPrice = 0;
@@ -165,31 +178,31 @@ shared({caller}) actor class Rex(
 
     public shared({caller}) func createEvent(data : Event.Data) : async Nat {
         assert(chargeCycles(createEventPrice));
-        lp.createEvent(caller, data);
+        events.createEvent(caller, data);
     };
 
     public shared({caller}) func updateEvent(index : Nat, data : Event.Data) : async () {
         assert(chargeCycles(updateEventPrice));
-        lp.updateEvent(caller, index, data);
+        events.updateEvent(caller, index, data);
     };
 
     public query func getEvent(token : Principal, index : Nat) : async ?Event.Data {
-        lp.getEvent(token, index);
+        events.getEvent(token, index);
     };
 
     public query({caller}) func getOwnEvents() : async [Event.Data] {
-        lp.getEventsOfToken(caller);
+        events.getEventsOfToken(caller);
     };
 
     public query func getAllEvents() : async Event.Events {
-        lp.getAllEvents();
+        events.getAllEvents();
     };
 
     public query func getEvents(tokens : [Principal]) : async Event.Events {
-        lp.getEvents(tokens);
+        events.getEvents(tokens);
     };
 
     public query func getEventsOfToken(token : Principal) : async [Event.Data] {
-        lp.getEventsOfToken(token);
+        events.getEventsOfToken(token);
     };
 };
