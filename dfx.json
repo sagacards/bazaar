@@ -5,11 +5,11 @@
             "type": "motoko"
         },
         "mock_ledger": {
-            "main": "test/mock/Ledger.mo",
+            "main": "mock/Ledger.mo",
             "type": "motoko"
         },
         "mock_nft": {
-            "main": "test/mock/NFT.mo",
+            "main": "mock/NFT.mo",
             "type": "motoko"
         }
     },

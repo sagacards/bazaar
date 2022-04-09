@@ -2,10 +2,10 @@ import HashMap "mo:base/HashMap";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
-import Ledger "../../src/Ledger";
-import Interface "../../src/Interface";
-import Event "../../src/Events/Event";
-import NFT "../../src/NFT";
+import Ledger "../src/Ledger";
+import Interface "../src/Interface";
+import Event "../src/Events/Event";
+import NFT "../src/NFT";
 
 shared({caller = owner}) actor class MockNFT(
     LAUNCHPAD_ID : Text

@@ -1,2 +1,7 @@
 .dfx/
 .vessel/
+keys/*.json
+dist/
+node_modules/
+src/declarations/
+package-lock.json
