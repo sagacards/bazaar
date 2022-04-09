@@ -1,6 +1,6 @@
 #!/bin/bash
 
-canister=${2:progenitus}
+canister=${2-progenitus}
 
 function deploy {
     if [ "$1" == "ic" ]; then

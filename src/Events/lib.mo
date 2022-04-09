@@ -4,7 +4,7 @@ import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 
 import Event "Event";
-import NFT "NFT";
+import NFT "../NFT";
 
 module {
     public type Interface = actor {
@@ -24,10 +24,35 @@ module {
         getEventsOfToken : query (token : Principal) -> async [Event.Data];
     };
 
-    public class Launchpad() {
-        let events = HashMap.HashMap<Principal, Buffer.Buffer<Event.Data>>(
-            0, Principal.equal, Principal.hash,
+    public type StableEvent = (Principal, [Event.Data]);
+
+    public type StableState = {
+        events : [StableEvent];
+    };
+
+    public class Class(
+        state : StableState
+    ) {
+        let events = HashMap.fromIter<Principal, Buffer.Buffer<Event.Data>>(
+            Iter.map<StableEvent, UnstableEvent>(
+                state.events.vals(),
+                func ((p, a) : StableEvent) : UnstableEvent {
+                    let b = Buffer.Buffer<Event.Data>(a.size());
+                    for (v in a.vals()) b.add(v);
+                    (p, b);
+                }
+            ),
+            state.events.size(), Principal.equal, Principal.hash,
         );
+
+        // Converts the internal state to a stable state.
+        private type UnstableEvent = (Principal, Buffer.Buffer<Event.Data>);
+        public func toStable() : StableState = {
+            events = Iter.toArray<StableEvent>(Iter.map<UnstableEvent, StableEvent>(
+                events.entries(),
+                func ((p, b) : UnstableEvent) : StableEvent = (p, b.toArray())
+            ));
+        };
 
         public func createEvent(canister : Principal, data : Event.Data) : Nat {
             switch (events.get(canister)) {
