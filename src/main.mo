@@ -115,46 +115,73 @@ shared({caller}) actor class Rex(
         });
     };
 
-    private func buy(amount : Ledger.Tokens, token : Principal, caller : Principal) : async Ledger.TransferResult {
-        await ledger.transfer({
+    /// Returns a non null MintError if either the transfer failed, or if the ledger trapped.
+    private func buy(amount : Ledger.Tokens, token : Principal, caller : Principal) : async ?Interface.MintError {
+        try (switch (await ledger.transfer({
             memo            = 0;
-            amount;
+            amount          = amount;
             fee             = { e8s = 10_000 };
+            // From the account of the caller.
             from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(caller));
+            // To the account of the token.
             to              = AccountIdentifier.getAccount(Principal.fromActor(this), token);
             created_at_time = null;
-        });
+        })) {
+            // Ok, no error occurred.
+            case (#Ok(_))    null;
+            // The transfer failed...
+            case (#Err(err)) ?#Transfer(err);
+        }) catch (_) {
+            // The ledger trapped.
+            ?#TryCatchTrap;
+        };
     };
 
-    public shared({caller}) func mint(token : Principal, index : Nat) : async Result.Result<Nat, Ledger.TransferError> {
+    /// The amount of principals that are currently minting...
+    /// It is basically a simple mutex lock?...
+    private var minting = 0;
+
+    /// Returns how many principals are currently waiting on the mint endpoint.
+    public query func currentlyMinting() : async Nat { minting };
+
+    public shared({caller}) func mint(token : Principal, index : Nat) : async Interface.MintResult {
         let price = switch (spots(caller, token, index)) {
             case (null, _) {
-                assert(false);
-                loop {};
+                return #err(#NoMintingSpot);
             };
             case (? v, price) {
-                if (v == 0) assert(false);
+                if (v == 0) return #err(#NoMintingSpot);
                 price;
             };
         };
         let t : NFT.Interface = actor(Principal.toText(token));
-        // NOTE: a million people could end up buying the same token...
         let available = await t.launchpadTotalAvailable(index);
-        // NOTE: Assertions give useless errors. Result please!
-        assert(0 < available);
+        if (available <= minting or 0 < available) return #err(#NoneAvailable);
+
+        // TODO: Check that we subtract 1 on every occurrence that the function exits.
+        // TODO: Add endpoint to reset this?
+        minting += 1;
+
         switch (await buy(price, token, caller)) {
-            case (#Ok(_))  {};
+            case (null)  {};
             // NOTE: Failure here: type mismatch: type on the wire rec_1, expect type nat
-            case (#Err(e)) return #err(e);
+            case (? e) {
+                minting -= 1;
+                return #err(e);
+            };
         };
-        // NOTE: from this point onwards, the user has paid!
+ 
         let r = try (await t.launchpadMint(caller)) catch (_) {
             #err(#TryCatchTrap);
         };
+        // Mint either succeeded or failed, so available should be updated.
+        minting -= 1;
+
         switch (r) {
             case (#err(_)) {
                 // TODO: refund!
-                assert(false); #ok(0);
+                assert(false);
+                loop {};
             };
             case (#ok(n)) {
                 // TODO: lower allowlist entry!
