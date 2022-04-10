@@ -3,7 +3,8 @@
     "target": "es2020",
     "module": "commonjs",
     "lib": [
-      "DOM"
+      "DOM",
+      "es5"
     ],
     "outDir": "./dist",
     "resolveJsonModule": true,

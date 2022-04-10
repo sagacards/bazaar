@@ -2,6 +2,15 @@
 
 > : descended.
 
+## Tests
+
+```sh
+cp .env.example .env
+npm i
+npm run makeadmin
+npm run test:dfx
+```
+
 ## Project Structure
 
 ```text
