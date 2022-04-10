@@ -4,7 +4,7 @@ import Result "mo:base/Result";
 
 import Ledger "../src/Ledger";
 import Interface "../src/Interface";
-import Event "../src/Events/Event";
+import Events "../src/Events";
 import NFT "../src/NFT";
 
 shared({caller = owner}) actor class MockNFT(
@@ -29,12 +29,12 @@ shared({caller = owner}) actor class MockNFT(
         total - i;
     };
 
-    public shared({caller}) func launchpadEventCreate(data : Event.Data) : async Nat {
+    public shared({caller}) func launchpadEventCreate(data : Events.Data) : async Nat {
         assert(caller == owner);
         await lp.createEvent(data);
     };
 
-    public shared({caller}) func launchpadEventUpdate(index : Nat, data : Event.Data) : async () {
+    public shared({caller}) func launchpadEventUpdate(index : Nat, data : Events.Data) : async Events.Result<()> {
         assert(caller == owner);
         await lp.updateEvent(index, data);
     };

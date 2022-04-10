@@ -6,7 +6,6 @@ import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
 import AccountIdentifier "AccountIdentifier";
-import Event "Events/Event";
 import Events "Events";
 import Interface "Interface";
 import Ledger "Ledger";
@@ -22,20 +21,12 @@ shared({caller}) actor class Rex(
 
     // 🏗 SYSTEM
 
-    private let emptyState = {
-        var events : Events.StableState = {
-            events = [];
-        };
-    };
-
-    stable var state = emptyState;
+    private stable var events : Events.Events = [];
+    private let events_ = Events.Events.fromStable(events);
+    events := [];
 
     system func preupgrade () {
-        state.events := events.toStable();
-    };
-
-    system func postupgrade() {
-        state := emptyState;
+        events := Events.Events.toStable(events_);
     };
 
     // 🛑 ADMIN
@@ -65,29 +56,8 @@ shared({caller}) actor class Rex(
 
     // 🟢 PUBLIC
 
-    public query({caller}) func getAllowlistSpots(canister : Principal, index : Nat) : async ?Int {
-        let (n, _) = spots(caller, canister, index);
-        n;
-    };
-
-    private func spots(caller : Principal, canister : Principal, index : Nat) : (n : ?Int, price : Ledger.Tokens) {
-        switch (events.getEvent(canister, index)) {
-            case (null) {
-                assert(false); // invalid event.
-                loop {};
-            };
-            case (? { accessType; price }) {
-                switch (accessType) {
-                    case (#Public) return (?-1, price);
-                    case (#Private(list)) {
-                        for ((p, v) in list.vals()) {
-                            if (p == caller) return (v, price);
-                        };
-                        (null, price);
-                    };
-                };
-            };
-        };
+    public query({caller}) func getAllowlistSpots(token : Principal, index : Nat) : async Result.Result<Int, Events.Error> {
+        Events.Events.getSpots(events_, token, index, caller);
     };
 
     public query({caller}) func getPersonalAccount() : async Ledger.AccountIdentifier {
@@ -145,14 +115,13 @@ shared({caller}) actor class Rex(
     public query func currentlyMinting() : async Nat { minting };
 
     public shared({caller}) func mint(token : Principal, index : Nat) : async Interface.MintResult {
-        let price = switch (spots(caller, token, index)) {
-            case (null, _) {
-                return #err(#NoMintingSpot);
-            };
-            case (? v, price) {
-                if (v == 0) return #err(#NoMintingSpot);
-                price;
-            };
+        switch (Events.Events.getSpots(events_, token, index, caller)) {
+            case (#err(e)) return #err(#Events(e));
+            case (#ok(v))  if (v == 0) return #err(#NoMintingSpot);
+        };
+        let price = switch(Events.Events.getPrice(events_, token, index)) {
+            case (#err(e)) return #err(#Events(e));
+            case (#ok(price)) price;
         };
         let t : NFT.Interface = actor(Principal.toText(token));
         let available = await t.launchpadTotalAvailable(index);
@@ -171,6 +140,11 @@ shared({caller}) actor class Rex(
             };
         };
  
+        // TODO: add one again if something goes wrong?
+        switch (Events.Events.removeSpot(events_, token, index, caller)) {
+            case (#err(e)) return #err(#Events(e));
+            case (#ok(_))  {};
+        };
         let r = try (await t.launchpadMint(caller)) catch (_) {
             #err(#TryCatchTrap);
         };
@@ -179,20 +153,15 @@ shared({caller}) actor class Rex(
 
         switch (r) {
             case (#err(_)) {
-                // TODO: refund!
+                // TODO: refund + add spot again.
                 assert(false);
                 loop {};
             };
-            case (#ok(n)) {
-                // TODO: lower allowlist entry!
-                #ok(n);
-            };
+            case (#ok(n)) #ok(n);
         };
     };
 
     // 🚀 LAUNCHPAD
-
-    private let events = Events.Class(state.events);
 
     private let createEventPrice = 0; // 1T;
     private let updateEventPrice = 0;
@@ -203,33 +172,39 @@ shared({caller}) actor class Rex(
         true;
     };
 
-    public shared({caller}) func createEvent(data : Event.Data) : async Nat {
+    public shared({caller}) func createEvent(data : Events.Data) : async Nat {
         assert(chargeCycles(createEventPrice));
-        events.createEvent(caller, data);
+        Events.Events.add(events_, caller, data);
     };
 
-    public shared({caller}) func updateEvent(index : Nat, data : Event.Data) : async () {
+    public shared({caller}) func updateEvent(index : Nat, data : Events.Data) : async Events.Result<()> {
         assert(chargeCycles(updateEventPrice));
-        events.updateEvent(caller, index, data);
+        Events.Events.replace(events_, caller, index, data);
     };
 
-    public query func getEvent(token : Principal, index : Nat) : async ?Event.Data {
-        events.getEvent(token, index);
+    public query func getEvent(token : Principal, index : Nat) : async Events.Result<Events.Data> {
+        Events.Events.getEventIndexData(events_, token, index);
     };
 
-    public query({caller}) func getOwnEvents() : async [Event.Data] {
-        events.getEventsOfToken(caller);
+    public query({caller}) func getOwnEvents() : async [Events.Data] {
+        switch (Events.Events.getEventData(events_, caller)) {
+            case (#err(_))   [];
+            case (#ok(data)) data;
+        };
     };
 
-    public query func getAllEvents() : async Event.Events {
-        events.getAllEvents();
+    public query func getAllEvents() : async Events.Events {
+        Events.Events.toStable(events_);
     };
 
-    public query func getEvents(tokens : [Principal]) : async Event.Events {
-        events.getEvents(tokens);
+    public query func getEvents(tokens : [Principal]) : async Events.Events {
+        Events.Events.toStableFilter(events_, tokens);
     };
 
-    public query func getEventsOfToken(token : Principal) : async [Event.Data] {
-        events.getEventsOfToken(token);
+    public query func getEventsOfToken(token : Principal) : async [Events.Data] {
+        switch (Events.Events.getEventData(events_, token)) {
+            case (#err(_))   [];
+            case (#ok(data)) data;
+        };
     };
 };
