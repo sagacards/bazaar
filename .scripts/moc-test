@@ -1,7 +1,6 @@
 #!/bin/bash
 
-function test {
-    $(vessel bin)/moc $(vessel sources) -r "$1"
-}
-
-test "$@"
+for i in $(find tests -name '*.test.mo'); do
+    echo "$i"
+    $(vessel bin)/moc $(vessel sources 2> /dev/null) -r $i
+done

@@ -4,6 +4,8 @@
 
 ## Tests
 
+### TypeScript
+
 ```sh
 cp .env.example .env
 npm i
@@ -11,21 +13,21 @@ npm run makeadmin
 npm run test:dfx
 ```
 
+### Motoko
+
+```sh
+./.scripts/moc-test
+```
+
 ## Project Structure
 
 ```text
 ./
-├── src
-└── test
+├── keys  | Private test keys used in the test suite.
+├── lib   | TS testing library.
+├── src   | The Motoko source code.
+└── tests | Both TS and Motoko tests.
 ```
-
-### `src`
-
-Motoko source files.
-
-### `test`
-
-Motoko test files.
 
 ## Utility Scripts
 
