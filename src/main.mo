@@ -125,7 +125,7 @@ shared({caller}) actor class Rex(
         };
         let t : NFT.Interface = actor(Principal.toText(token));
         let available = await t.launchpadTotalAvailable(index);
-        if (available <= minting or 0 < available) return #err(#NoneAvailable);
+        if (available <= minting) return #err(#NoneAvailable);
 
         // TODO: Check that we subtract 1 on every occurrence that the function exits.
         // TODO: Add endpoint to reset this?

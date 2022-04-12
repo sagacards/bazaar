@@ -41,28 +41,24 @@ module {
             list.vals(), list.size(), Principal.equal, Principal.hash
         );
         
-        public func removeSpot(list_ : Allowlist_, user : Principal) : Result<Spots> = switch (list_.get(user)) {
-            case (null) #err(#NotInAllowlist);
-            case (? spots) {
-                switch (spots) {
-                    case (null) #err(#NotInAllowlist);
-                    case (? spots) {
-                        if (spots < 0) return #ok(?-1);
-                        switch (spots) {
-                            case (0) #err(#NotInAllowlist);
-                            case (s) switch (spots - 1) {
-                                case (0) {
-                                    list_.delete(user);
-                                    #ok(null);
-                                };
-                                case (s) {
-                                    list_.put(user, ?spots);
-                                    #ok(?spots);
-                                };
-                            };
-                        };
+        public func removeSpot(list_ : Allowlist_, user : Principal) : Result<Spots> {
+            switch (do ? {
+                let spots = list_.get(user)!!;
+                if (spots < 0)  return #ok(?-1);
+                if (spots == 0) return #err(#NotInAllowlist);
+                switch (spots - 1) {
+                    case (0) {
+                        list_.delete(user);
+                        null;
+                    };
+                    case (spots) {
+                        list_.put(user, ?spots);
+                        ?spots;
                     };
                 };
+            }) {
+                case (null)    #err(#NotInAllowlist);
+                case (? spots) #ok(spots);
             };
         };
     };
