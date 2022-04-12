@@ -1,6 +1,6 @@
 import Result "mo:base/Result";
 
-import Event "Events/Event";
+import Events "Events";
 
 module {
     public type MintError = {
@@ -13,9 +13,9 @@ module {
         // 🛑 NFT ADMIN RESTRICTED
 
         // Creates a new event and returns the storage index.
-        launchpadEventCreate : shared (event : Event.Data) -> async Nat;
+        launchpadEventCreate : shared (event : Events.Data) -> async Nat;
         // Overwrites the event at the given storage index.
-        launchpadEventUpdate : shared (index : Nat, event : Event.Data) -> async ();
+        launchpadEventUpdate : shared (index : Nat, event : Events.Data) -> async Events.Result<()>;
 
         // 🚀 LAUNCHPAD RESTRICTED
 
