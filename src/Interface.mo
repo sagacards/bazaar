@@ -2,6 +2,7 @@ import Result "mo:base/Result";
 import AccountIdentifier "AccountIdentifier";
 import Ledger "Ledger";
 
+import NFT "NFT";
 import Events "Events";
 import IEvents "Events/Interface";
 
@@ -18,6 +19,8 @@ module Interface {
     public type MintError = {
         /// Describes a ledger transfer error.
         #Transfer : Ledger.TransferError;
+        /// Indicates that the mint failed but the paid amount got refunded.
+        #Refunded;
         /// Describes an event error;
         #Events : Events.Error;
         /// Indicates that you are not in the allowlist and are not allowed to mint.

@@ -41,24 +41,29 @@ module {
             list.vals(), list.size(), Principal.equal, Principal.hash
         );
         
-        public func removeSpot(list_ : Allowlist_, user : Principal) : Result<Spots> {
+        public func removeSpot(list_ : Allowlist_, user : Principal) : Result<Int> {
+            ignore do ? {
+                let spots = list_.get(user)!!;
+                if (spots < 0)  return #ok(-1);
+                if (spots == 0) return #err(#NotInAllowlist);
+                let new = spots - 1;
+                switch (new) {
+                    case (0)     list_.delete(user);
+                    case (spots) list_.put(user, ?spots);
+                };
+                return #ok(new);
+            };
+            #err(#NotInAllowlist);
+        };
+
+        public func addSpot(list_ : Allowlist_, user : Principal) {
             switch (do ? {
                 let spots = list_.get(user)!!;
-                if (spots < 0)  return #ok(?-1);
-                if (spots == 0) return #err(#NotInAllowlist);
-                switch (spots - 1) {
-                    case (0) {
-                        list_.delete(user);
-                        null;
-                    };
-                    case (spots) {
-                        list_.put(user, ?spots);
-                        ?spots;
-                    };
-                };
+                if (spots < 0) return;
+                list_.put(user, ?(spots + 1));
             }) {
-                case (null)    #err(#NotInAllowlist);
-                case (? spots) #ok(spots);
+                case (null) list_.put(user, ?1);
+                case (_) {};
             };
         };
     };
@@ -98,9 +103,14 @@ module {
             };
         };
 
-        public func removeSpot(access_ : Access_, user : Principal) : Result<Spots> = switch (access_) {
-            case (#Public)        #ok(?-1);
+        public func removeSpot(access_ : Access_, user : Principal) : Result<Int> = switch (access_) {
+            case (#Public)        #ok(-1);
             case (#Private(list)) Allowlist.removeSpot(list, user);
+        };
+
+        public func addSpot(access_ : Access_, user : Principal) = switch (access_) {
+            case (#Public) {};
+            case (#Private(list)) Allowlist.addSpot(list, user);
         };
     };
 
@@ -231,9 +241,19 @@ module {
             events_ : Events_, 
             token   : Principal, index : Nat,
             user    : Principal,
-        ) : Result<Spots> = switch (getEventData_(events_, token, index)) {
+        ) : Result<Int> = switch (getEventData_(events_, token, index)) {
             case (#err(e))         #err(e);
             case (#ok(_, access_)) Access.removeSpot(access_, user);
+        };
+
+        // @pre: token:index event exists.
+        public func addSpot(
+            events_ : Events_, 
+            token   : Principal, index : Nat,
+            user    : Principal,
+        ) = switch (getEventData_(events_, token, index)) {
+            case (#err(e)) {};
+            case (#ok(_, access_)) Access.addSpot(access_, user);
         };
     };
 
