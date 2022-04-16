@@ -1,9 +1,9 @@
 {
   "scripts": {
     "makeadmin": "npx ts-node -e 'require(\"./lib/keys.ts\").generateKey(\"admin\")'",
-    "deploy": "npx ts-node scripts/deploy.ts",
+    "deploy:local": "dfx start --background --clean && ./.scripts/dfx-deploy",
     "test": "mocha --timeout 10000 -r ts-node/register 'tests/**/*.ts'",
-    "test:dfx": "dfx start --background --clean && ./.scripts/dfx-deploy && npm test && dfx stop"
+    "test:dfx": "npm run deploy:local && npm test && dfx stop"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",

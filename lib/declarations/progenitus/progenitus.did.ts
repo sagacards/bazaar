@@ -1,5 +1,4 @@
 import { IDL } from "@dfinity/candid";
-
 export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
   const Tokens = IDL.Record({ 'e8s' : IDL.Nat64 });
   const Time = IDL.Int;
