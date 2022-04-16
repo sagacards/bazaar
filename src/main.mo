@@ -3,7 +3,6 @@ import Cycles "mo:base/ExperimentalCycles";
 import HashMap "mo:base/HashMap";
 import List "mo:base/List";
 import Principal "mo:base/Principal";
-import Queue "mo:queue/Queue";
 import Result "mo:base/Result";
 
 import AccountIdentifier "AccountIdentifier";

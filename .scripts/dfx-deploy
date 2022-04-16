@@ -16,6 +16,7 @@ function deploy {
         dfx deploy $canister --argument "(\"$ledgerId\")"
         progenitusId=$(dfx canister id $canister)
         dfx deploy mock_nft --argument "(\"$progenitusId\")"
+        dfx canister call mock_nft addAdmin "(principal \"$adminId\")"
     fi
 }
 

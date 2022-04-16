@@ -1,6 +1,7 @@
 import HashMap "mo:base/HashMap";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
+import List "mo:base/List";
 
 import Ledger "../src/Ledger";
 import Interface "../src/Interface";
@@ -10,6 +11,22 @@ import NFT "../src/NFT";
 shared({caller = owner}) actor class MockNFT(
     LAUNCHPAD_ID : Text
 ) : async NFT.Interface {
+
+    private stable var admins : List.List<Principal> = ?(owner, null);
+
+    private func isAdmin(caller : Principal) {
+        assert(List.find(admins, func (p : Principal) : Bool { p == caller }) != null);
+    };
+
+    public shared({caller}) func addAdmin(a : Principal) {
+        isAdmin(caller);
+        admins := ?(a, admins);
+    };
+
+    public query func getAdmins() : async [Principal] {
+        List.toArray(admins);
+    };
+
     private let lp : Interface.Main = actor(LAUNCHPAD_ID);
     private var i : Nat = 0;
     private let total = 100;
@@ -30,17 +47,17 @@ shared({caller = owner}) actor class MockNFT(
     };
 
     public shared({caller}) func launchpadEventCreate(data : Events.Data) : async Nat {
-        assert(caller == owner);
+        isAdmin(caller);
         await lp.createEvent(data);
     };
 
     public shared({caller}) func launchpadEventUpdate(index : Nat, data : Events.Data) : async Events.Result<()> {
-        assert(caller == owner);
+        isAdmin(caller);
         await lp.updateEvent(index, data);
     };
 
     public shared({caller}) func withdrawAll(to : Ledger.AccountIdentifier) : async Ledger.TransferResult {
-        assert(caller == owner);
+        isAdmin(caller);
         let amount = await lp.balance();
         await lp.transfer(amount, to);
     };
