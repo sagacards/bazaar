@@ -4,8 +4,9 @@ import Events "Events";
 
 module {
     public type MintError = {
-        // Indicates that there are no NFTs available anymore.
+        /// Indicates that no more NFTs are available.
         #NoneAvailable;
+        /// Indicates that an external services trapped...
         #TryCatchTrap;
     };
 

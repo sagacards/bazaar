@@ -3,6 +3,7 @@ import Cycles "mo:base/ExperimentalCycles";
 import HashMap "mo:base/HashMap";
 import List "mo:base/List";
 import Principal "mo:base/Principal";
+import Queue "mo:queue/Queue";
 import Result "mo:base/Result";
 
 import AccountIdentifier "AccountIdentifier";
@@ -86,10 +87,14 @@ shared({caller}) actor class Rex(
     };
 
     /// Returns a non null MintError if either the transfer failed, or if the ledger trapped.
-    private func buy(amount : Ledger.Tokens, token : Principal, caller : Principal) : async ?Interface.MintError {
+    private func buy(
+        amount : Ledger.Tokens, token : Principal, 
+        caller : Principal,
+        revert : () -> ()
+    ) : async Result.Result<(), Interface.MintError> {
         try (switch (await ledger.transfer({
             memo            = 0;
-            amount          = amount;
+            amount;
             fee             = { e8s = 10_000 };
             // From the account of the caller.
             from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(caller));
@@ -97,13 +102,63 @@ shared({caller}) actor class Rex(
             to              = AccountIdentifier.getAccount(Principal.fromActor(this), token);
             created_at_time = null;
         })) {
-            // Ok, no error occurred.
-            case (#Ok(_))    null;
-            // The transfer failed...
-            case (#Err(err)) ?#Transfer(err);
+            case (#Ok(_)) #ok; // Ok, no error occurred.
+            case (#Err(err)) {
+                revert();
+                #err(#Transfer(err)); // The transfer failed...
+            };
         }) catch (_) {
-            // The ledger trapped.
-            ?#TryCatchTrap;
+            revert();
+            #err(#TryCatchTrap); // The ledger trapped.
+        };
+    };
+
+    private func totalAvailable(
+        token : Principal, index : Nat,
+        revert : () -> ()
+    ) : async Interface.MintResult {
+        let t : NFT.Interface = actor(Principal.toText(token));
+        let available = try (await t.launchpadTotalAvailable(index)) catch (_) {
+            revert();
+            return #err(#TryCatchTrap);
+        };
+        if (available <= minting) {
+            revert();
+            return #err(#NoneAvailable);
+        };
+        #ok(available);
+    };
+
+    private func mintToken(
+        token : Principal, caller : Principal, amount : Ledger.Tokens,
+        revert : () -> ()
+    ) : async Interface.MintResult {
+        let t : NFT.Interface = actor(Principal.toText(token));
+        switch(try (await t.launchpadMint(caller)) catch (_) {
+            revert();
+            return #err(#TryCatchTrap);
+        }) {
+            case (#err(e)) {
+                // TODO: for now I will just assume that that refund tx does not trap...
+                //       maybe this can be solved by a queue + retrying? 
+                switch (await ledger.transfer({
+                    memo            = 0;
+                    amount;
+                    fee             = { e8s = 10_000 };
+                    // From the account of the token.
+                    from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(token));
+                    // To the account of the caller.
+                    to              = AccountIdentifier.getAccount(Principal.fromActor(this), caller);
+                    created_at_time = null;
+                })) {
+                    case (#Ok(_))  #err(#Refunded);
+                    case (#Err(e)) #err(#Transfer(e));
+                };
+            };
+            case (#ok(n)) {
+                minting -= 1;
+                #ok(n);
+            };
         };
     };
 
@@ -115,50 +170,39 @@ shared({caller}) actor class Rex(
     public query func currentlyMinting() : async Nat { minting };
 
     public shared({caller}) func mint(token : Principal, index : Nat) : async Interface.MintResult {
-        switch (Events.Events.getSpots(events_, token, index, caller)) {
-            case (#err(e)) return #err(#Events(e));
-            case (#ok(v))  if (v == 0) return #err(#NoMintingSpot);
-        };
         let price = switch(Events.Events.getPrice(events_, token, index)) {
             case (#err(e)) return #err(#Events(e));
             case (#ok(price)) price;
         };
-        let t : NFT.Interface = actor(Principal.toText(token));
-        let available = await t.launchpadTotalAvailable(index);
-        if (available <= minting) return #err(#NoneAvailable);
+        switch (Events.Events.removeSpot(events_, token, index, caller)) {
+            case (#err(e)) return #err(#Events(e));
+            case (#ok(v))  if (v == 0) return #err(#NoMintingSpot);
+        };
+
+        let available = switch (await totalAvailable(token, index, func () {
+            // Revert call.
+            Events.Events.addSpot(events_, token, index, caller);
+        })) {
+            case (#ok(a))  a;
+            case (#err(e)) return #err(e);
+        };
 
         // TODO: Check that we subtract 1 on every occurrence that the function exits.
         // TODO: Add endpoint to reset this?
         minting += 1;
 
-        switch (await buy(price, token, caller)) {
-            case (null)  {};
+        let revert = func () {
+            // Revert call.
+            Events.Events.addSpot(events_, token, index, caller);
+            minting -= 1;
+        };
+        switch (await buy(price, token, caller, revert)) {
+            case (#ok)  {};
             // NOTE: Failure here: type mismatch: type on the wire rec_1, expect type nat
-            case (? e) {
-                minting -= 1;
-                return #err(e);
-            };
+            case (#err(e)) return #err(e);
         };
- 
-        // TODO: add one again if something goes wrong?
-        switch (Events.Events.removeSpot(events_, token, index, caller)) {
-            case (#err(e)) return #err(#Events(e));
-            case (#ok(_))  {};
-        };
-        let r = try (await t.launchpadMint(caller)) catch (_) {
-            #err(#TryCatchTrap);
-        };
-        // Mint either succeeded or failed, so available should be updated.
-        minting -= 1;
-
-        switch (r) {
-            case (#err(_)) {
-                // TODO: refund + add spot again.
-                assert(false);
-                loop {};
-            };
-            case (#ok(n)) #ok(n);
-        };
+        
+        await mintToken(token, caller, price, revert);
     };
 
     // 🚀 LAUNCHPAD
