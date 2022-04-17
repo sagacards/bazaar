@@ -2,16 +2,15 @@ import { IDL } from "@dfinity/candid";
 export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
   const Time = IDL.Int;
   const EventName = IDL.Text;
-  const StableAllowlist = IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Opt(IDL.Int)));
-  const Access = IDL.Variant({
-    'Private' : StableAllowlist,
-    'Public' : IDL.Null,
-  });
+  const Spots = IDL.Opt(IDL.Int);
+  const Allowlist = IDL.Vec(IDL.Tuple(IDL.Principal, Spots));
+  const Access = IDL.Variant({ 'Private' : Allowlist, 'Public' : IDL.Null });
+  const URL = IDL.Text;
   const CollectionDetails = IDL.Record({
-    'descriptionMarkdownUrl' : IDL.Text,
-    'iconImageUrl' : IDL.Text,
-    'bannerImageUrl' : IDL.Text,
-    'previewImageUrl' : IDL.Text,
+    'descriptionMarkdownUrl' : URL,
+    'iconImageUrl' : URL,
+    'bannerImageUrl' : URL,
+    'previewImageUrl' : URL,
   });
   const Tokens = IDL.Record({ 'e8s' : IDL.Nat64 });
   const Data = IDL.Record({
@@ -23,6 +22,12 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
     'price' : Tokens,
     'endsAt' : Time,
   });
+  const Error = IDL.Variant({
+    'NotInAllowlist' : IDL.Null,
+    'TokenNotFound' : IDL.Principal,
+    'IndexNotFound' : IDL.Nat,
+  });
+  const Result__1 = IDL.Variant({ 'ok' : IDL.Null, 'err' : Error });
   const MintError = IDL.Variant({
     'NoneAvailable' : IDL.Null,
     'TryCatchTrap' : IDL.Null,
@@ -42,8 +47,10 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
     'Err' : TransferError,
   });
   const MockNFT = IDL.Service({
+    'addAdmin' : IDL.Func([IDL.Principal], [], ['oneway']),
+    'getAdmins' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'launchpadEventCreate' : IDL.Func([Data], [IDL.Nat], []),
-    'launchpadEventUpdate' : IDL.Func([IDL.Nat, Data], [], []),
+    'launchpadEventUpdate' : IDL.Func([IDL.Nat, Data], [Result__1], []),
     'launchpadMint' : IDL.Func([IDL.Principal], [Result], []),
     'launchpadTotalAvailable' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
     'withdrawAll' : IDL.Func([AccountIdentifier], [TransferResult], []),

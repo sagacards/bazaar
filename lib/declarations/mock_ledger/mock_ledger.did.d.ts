@@ -6,6 +6,8 @@ export type BlockIndex = bigint;
 export type Memo = bigint;
 export interface MockLedger {
   'account_balance' : (arg_0: AccountBalanceArgs) => Promise<Tokens>,
+  'addAdmin' : (arg_0: Principal) => Promise<undefined>,
+  'getAdmins' : () => Promise<Array<Principal>>,
   'mint' : (
       arg_0: { 'to' : AccountIdentifier__1, 'amount' : Tokens },
     ) => Promise<BlockIndex>,
