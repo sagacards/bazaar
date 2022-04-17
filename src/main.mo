@@ -54,6 +54,11 @@ shared({caller}) actor class Rex(
         List.toArray(admins);
     };
 
+    public shared({caller}) func removeEvent(token : Principal, index : Nat) {
+        isAdmin(caller);
+        Events.Events.remove(events_, token, index);
+    };
+
     // 🟢 PUBLIC
 
     public query({caller}) func getAllowlistSpots(token : Principal, index : Nat) : async Result.Result<Int, Events.Error> {

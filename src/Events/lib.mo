@@ -146,6 +146,21 @@ module {
             };
         };
 
+        public func remove(events_ : Events_, token : Principal, index : Nat) {
+            switch (events_.get(token)) {
+                case (null) {};
+                case (? buffer) {
+                    var new = Buffer.Buffer<Data_>(buffer.size());
+                    var i = 0;
+                    for (data in buffer.vals()) {
+                        if (i != index) new.add(data);
+                        i += 1;
+                    };
+                    events_.put(token, new);
+                };
+            };
+        };
+
         public func fromStable(events : Events) : Events_ {
             let events_ : Events_ = HashMap.HashMap(
                 events.size(), Principal.equal, Principal.hash
