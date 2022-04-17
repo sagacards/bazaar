@@ -1,9 +1,9 @@
 import { assert } from "chai";
-import { users, admin } from "./accounts";
+import { admin, users } from "./accounts";
 import { nftPrincipal } from "../lib";
 
 const time = BigInt(Date.now());
-const testEventData = {
+export const eventData = {
     startsAt: time,
     endsAt: time * 2n,
     name: "test1",
@@ -15,7 +15,7 @@ const testEventData = {
         previewImageUrl: "",
     },
     accessType: { "Public": null },
-    price: { "e8s": 0n },
+    price: { "e8s": 1_00_000_000n },
 };
 
 describe("Events", () => {
@@ -26,10 +26,10 @@ describe("Events", () => {
     });
     it("Try to create an event as a user.", async () => {
         const user = users[0];
-        user.nft.launchpadEventCreate(testEventData).then(() => assert.fail()).catch(/* OK */);
+        user.nft.launchpadEventCreate(eventData).then(() => assert.fail()).catch(/* OK */);
     });
-    it("Try to create an event as an admin.", async () => {
-        let i = await admin.nft.launchpadEventCreate(testEventData);
+    it("Create an event as an admin.", async () => {
+        let i = await admin.nft.launchpadEventCreate(eventData);
         assert.equal(i, 0n);
     });
     it("Check if the created event exist.", async () => {

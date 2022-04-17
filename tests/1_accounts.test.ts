@@ -1,5 +1,5 @@
 import { assert } from "chai";
-import { users, admin } from "./accounts";
+import { admin, users } from "./accounts";
 import { getAccountIdentifier } from "../lib/keys";
 
 describe("Ledger", () => {
