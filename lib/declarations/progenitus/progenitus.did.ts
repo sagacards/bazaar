@@ -43,7 +43,7 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
   const MintError = IDL.Variant({
     'NoneAvailable' : IDL.Null,
     'Refunded' : IDL.Null,
-    'TryCatchTrap' : IDL.Null,
+    'TryCatchTrap' : IDL.Text,
     'NoMintingSpot' : IDL.Null,
     'Transfer' : TransferError,
     'Events' : Error,

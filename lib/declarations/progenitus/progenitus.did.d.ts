@@ -27,7 +27,7 @@ export type EventName = string;
 export type Events = Array<Event>;
 export type MintError = { 'NoneAvailable' : null } |
   { 'Refunded' : null } |
-  { 'TryCatchTrap' : null } |
+  { 'TryCatchTrap' : string } |
   { 'NoMintingSpot' : null } |
   { 'Transfer' : TransferError } |
   { 'Events' : Error };

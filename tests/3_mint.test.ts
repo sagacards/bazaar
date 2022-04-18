@@ -40,5 +40,6 @@ describe("Mint", () => {
         const user = users[0];
         const err = await user.launchpad.mint(nftPrincipal, 0n);
         assert.isTrue("err" in err);
+        console.log(err);
     });
 });

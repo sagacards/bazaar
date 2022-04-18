@@ -7,7 +7,7 @@ module {
         /// Indicates that no more NFTs are available.
         #NoneAvailable;
         /// Indicates that an external services trapped...
-        #TryCatchTrap;
+        #TryCatchTrap : Text;
     };
 
     public type Interface = actor {

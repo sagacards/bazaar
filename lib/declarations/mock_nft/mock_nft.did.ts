@@ -31,7 +31,7 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
   const Result__1 = IDL.Variant({ 'ok' : IDL.Null, 'err' : Error });
   const MintError = IDL.Variant({
     'NoneAvailable' : IDL.Null,
-    'TryCatchTrap' : IDL.Null,
+    'TryCatchTrap' : IDL.Text,
   });
   const Result = IDL.Variant({ 'ok' : IDL.Nat, 'err' : MintError });
   const BlockIndex = IDL.Nat64;

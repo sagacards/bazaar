@@ -1,7 +1,7 @@
 import Result "mo:base/Result";
+
 import AccountIdentifier "AccountIdentifier";
 import Ledger "Ledger";
-
 import Events "Events";
 
 module Interface {
@@ -27,7 +27,7 @@ module Interface {
         /// Indicates that no more NFTs are available.
         #NoneAvailable;
         /// Indicates that an external services trapped...
-        #TryCatchTrap;
+        #TryCatchTrap : Text;
     };
 
     /// 🟢 Public functions.
