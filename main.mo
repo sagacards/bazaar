@@ -7,11 +7,12 @@ import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
 import Canistergeek "mo:canistergeek/canistergeek";
-import AccountIdentifier "AccountIdentifier";
-import Events "Events";
-import Interface "Interface";
-import Ledger "Ledger";
-import NFT "NFT";
+
+import AccountIdentifier "src/AccountIdentifier";
+import Events "src/Events";
+import Interface "src/Interface";
+import Ledger "src/Ledger";
+import NFT "src/NFT";
 
 shared({caller}) actor class Rex(
     LEDGER_ID : Text,

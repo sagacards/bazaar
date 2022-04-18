@@ -1,7 +1,7 @@
 {
     "canisters": {
         "bazaar": {
-            "main": "src/main.mo",
+            "main": "main.mo",
             "type": "motoko"
         },
         "mock_ledger": {
