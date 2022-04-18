@@ -46,6 +46,10 @@ shared({caller = owner}) actor class MockNFT(
         total - i;
     };
 
+    public query({caller}) func launchpadTotalSupply(event : Nat) : async Nat {
+        total;
+    };
+
     public shared({caller}) func launchpadEventCreate(data : Events.Data) : async Nat {
         isAdmin(caller);
         await lp.createEvent(data);
