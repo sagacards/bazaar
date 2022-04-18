@@ -101,7 +101,7 @@ shared({caller}) actor class Rex(
         isAdmin(caller);
         canistergeekMonitor.collectMetrics();
     };
-
+  
     // 🟢 PUBLIC
 
     public query({caller}) func getAllowlistSpots(token : Principal, index : Nat) : async Result.Result<Int, Events.Error> {
