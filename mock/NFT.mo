@@ -1,3 +1,4 @@
+import Buffer "mo:base/Buffer";
 import HashMap "mo:base/HashMap";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
@@ -27,23 +28,23 @@ shared({caller = owner}) actor class MockNFT(
         List.toArray(admins);
     };
 
-    private let lp : Interface.Main = actor(LAUNCHPAD_ID);
-    private var i : Nat = 0;
-    private let total = 100;
-    private let ledger = HashMap.HashMap<Principal, Nat>(
-        0, Principal.equal, Principal.hash
-    );
-
-    public shared({caller}) func launchpadMint(p : Principal) : async Result.Result<Nat, NFT.MintError> {
-        assert(caller == Principal.fromActor(lp));
-        if (i >= total) return #err(#NoneAvailable);
-        ledger.put(p, i);
-        i += 1;
-        #ok(i - 1);
+    public shared({caller}) func transfer(to : Ledger.AccountIdentifier) : async Ledger.TransferResult {
+        isAdmin(caller);
+        let amount = await lp.balance();
+        await lp.transfer(amount, to);
     };
 
-    public query({caller}) func launchpadTotalAvailable(event : Nat) : async Nat {
-        total - i;
+    public shared({caller}) func getPersonalAccount() : async Ledger.AccountIdentifier {
+        await lp.getPersonalAccount();
+    };
+
+    public shared({caller}) func reset(_total : Nat) {
+        isAdmin(caller);
+        i      := 0;
+        total  := _total;
+        ledger := HashMap.HashMap<Principal, Buffer.Buffer<Nat>>(
+            total, Principal.equal, Principal.hash
+        );
     };
 
     public shared({caller}) func launchpadEventCreate(data : Events.Data) : async Nat {
@@ -56,9 +57,47 @@ shared({caller = owner}) actor class MockNFT(
         await lp.updateEvent(index, data);
     };
 
-    public shared({caller}) func withdrawAll(to : Ledger.AccountIdentifier) : async Ledger.TransferResult {
+    private var trap = false;
+
+    public shared({caller}) func toggleTrap(_trap : Bool) {
         isAdmin(caller);
-        let amount = await lp.balance();
-        await lp.transfer(amount, to);
+        trap := _trap;
+    };
+
+    private let lp : Interface.Main = actor(LAUNCHPAD_ID);
+
+    private var i : Nat = 0;
+    private var total = 100;
+    private var ledger = HashMap.HashMap<Principal, Buffer.Buffer<Nat>>(
+        total, Principal.equal, Principal.hash
+    );
+
+    public shared({caller}) func launchpadMint(p : Principal) : async Result.Result<Nat, NFT.MintError> {
+        assert(caller == Principal.fromActor(lp));
+        if (trap) assert(false);
+
+        if (i >= total) return #err(#NoneAvailable);
+        let buffer = switch (ledger.get(p)) {
+            case (null) {
+                let b = Buffer.Buffer<Nat>(1);
+                ledger.put(p, b);
+                b;
+            };
+            case (? buffer) buffer;
+        };
+        buffer.add(i);
+        i += 1;
+        #ok(i - 1);
+    };
+
+    public query({caller}) func launchpadTotalAvailable(event : Nat) : async Nat {
+        total - i;
+    };
+
+    public query({caller}) func balance() : async [Nat] {
+        switch (ledger.get(caller)) {
+            case (null) [];
+            case (? buffer) buffer.toArray();
+        };
     };
 };

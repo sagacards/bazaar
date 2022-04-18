@@ -2,7 +2,7 @@
   "scripts": {
     "makeadmin": "npx ts-node -e 'require(\"./lib/keys.ts\").generateKey(\"admin\")'",
     "deploy:local": "dfx start --background --clean && ./.scripts/dfx-deploy",
-    "test": "mocha --timeout 10000 -r ts-node/register 'tests/**/*.ts'",
+    "test": "mocha --timeout 60000 -r ts-node/register 'tests/**/*.ts'",
     "test:dfx": "npm run deploy:local && npm test && dfx stop"
   },
   "devDependencies": {

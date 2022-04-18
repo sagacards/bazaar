@@ -7,7 +7,7 @@ describe("Ledger", () => {
         const account = await users[0].launchpad.getPersonalAccount();
         await admin.ledger.mint({
             to: account,
-            amount: { e8s: 10000000000n }
+            amount: { e8s: 100_00_000_000n }
         });
         const balance = await users[0].ledger.account_balance({ account });
         assert.equal(balance.e8s, 10000000000n);

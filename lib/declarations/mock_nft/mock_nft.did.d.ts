@@ -27,12 +27,16 @@ export type MintError = { 'NoneAvailable' : null } |
   { 'TryCatchTrap' : null };
 export interface MockNFT {
   'addAdmin' : (arg_0: Principal) => Promise<undefined>,
+  'balance' : () => Promise<Array<bigint>>,
   'getAdmins' : () => Promise<Array<Principal>>,
+  'getPersonalAccount' : () => Promise<AccountIdentifier>,
   'launchpadEventCreate' : (arg_0: Data) => Promise<bigint>,
   'launchpadEventUpdate' : (arg_0: bigint, arg_1: Data) => Promise<Result__1>,
   'launchpadMint' : (arg_0: Principal) => Promise<Result>,
   'launchpadTotalAvailable' : (arg_0: bigint) => Promise<bigint>,
-  'withdrawAll' : (arg_0: AccountIdentifier) => Promise<TransferResult>,
+  'reset' : (arg_0: bigint) => Promise<undefined>,
+  'toggleTrap' : (arg_0: boolean) => Promise<undefined>,
+  'transfer' : (arg_0: AccountIdentifier) => Promise<TransferResult>,
 }
 export type Result = { 'ok' : bigint } |
   { 'err' : MintError };

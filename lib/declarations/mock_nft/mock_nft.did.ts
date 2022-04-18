@@ -1,5 +1,6 @@
 import { IDL } from "@dfinity/candid";
 export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
+  const AccountIdentifier = IDL.Vec(IDL.Nat8);
   const Time = IDL.Int;
   const EventName = IDL.Text;
   const Spots = IDL.Opt(IDL.Int);
@@ -33,7 +34,6 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
     'TryCatchTrap' : IDL.Null,
   });
   const Result = IDL.Variant({ 'ok' : IDL.Nat, 'err' : MintError });
-  const AccountIdentifier = IDL.Vec(IDL.Nat8);
   const BlockIndex = IDL.Nat64;
   const TransferError = IDL.Variant({
     'TxTooOld' : IDL.Record({ 'allowed_window_nanos' : IDL.Nat64 }),
@@ -48,12 +48,16 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
   });
   const MockNFT = IDL.Service({
     'addAdmin' : IDL.Func([IDL.Principal], [], ['oneway']),
+    'balance' : IDL.Func([], [IDL.Vec(IDL.Nat)], ['query']),
     'getAdmins' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
+    'getPersonalAccount' : IDL.Func([], [AccountIdentifier], []),
     'launchpadEventCreate' : IDL.Func([Data], [IDL.Nat], []),
     'launchpadEventUpdate' : IDL.Func([IDL.Nat, Data], [Result__1], []),
     'launchpadMint' : IDL.Func([IDL.Principal], [Result], []),
     'launchpadTotalAvailable' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
-    'withdrawAll' : IDL.Func([AccountIdentifier], [TransferResult], []),
+    'reset' : IDL.Func([IDL.Nat], [], ['oneway']),
+    'toggleTrap' : IDL.Func([IDL.Bool], [], ['oneway']),
+    'transfer' : IDL.Func([AccountIdentifier], [TransferResult], []),
   });
   return MockNFT;
 };
