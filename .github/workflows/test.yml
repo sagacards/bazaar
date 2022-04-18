@@ -13,4 +13,8 @@ jobs:
         with:
           node-version: '16.x'
       - run: npm install
-      - run: npm run test:dfx
+      - run: |
+          cp .env.example .env
+          npm i
+          npm run make-admin
+          npm run test:dfx
