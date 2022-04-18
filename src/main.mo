@@ -6,6 +6,7 @@ import List "mo:base/List";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
 
+import Canistergeek "mo:canistergeek/canistergeek";
 import AccountIdentifier "AccountIdentifier";
 import Events "Events";
 import Interface "Interface";
@@ -26,8 +27,16 @@ shared({caller}) actor class Rex(
     private let events_ = Events.Events.fromStable(events);
     events := [];
 
+    private stable var _canistergeekMonitorUD: ? Canistergeek.UpgradeData = null;
+
     system func preupgrade () {
         events := Events.Events.toStable(events_);
+        _canistergeekMonitorUD := ? canistergeekMonitor.preupgrade();
+    };
+
+    system func postupgrade() { 
+        canistergeekMonitor.postupgrade(_canistergeekMonitorUD);
+        _canistergeekMonitorUD := null;
     };
 
     // 🛑 ADMIN
@@ -40,12 +49,14 @@ shared({caller}) actor class Rex(
     /// 🛑
     public shared({caller}) func addAdmin(a : Principal) {
         isAdmin(caller);
+        canistergeekMonitor.collectMetrics();
         admins := ?(a, admins);
     };
 
     /// 🛑
     public shared({caller}) func removeAdmin(a : Principal) {
         isAdmin(caller);
+        canistergeekMonitor.collectMetrics();
         admins := List.filter(admins, func (p : Principal) : Bool { p != a });
     };
 
@@ -57,7 +68,37 @@ shared({caller}) actor class Rex(
 
     public shared({caller}) func removeEvent(token : Principal, index : Nat) {
         isAdmin(caller);
+        canistergeekMonitor.collectMetrics();
         Events.Events.remove(events_, token, index);
+    };
+
+    // 👀 LOGGING & MONITORING
+
+    private let canistergeekMonitor = Canistergeek.Monitor();
+    private let canistergeekLogger = Canistergeek.Logger();
+
+    private func _log (
+        caller  : Principal,
+        method  : Text,
+        message : Text,
+    ) : () {
+        canistergeekLogger.logMessage(
+            Principal.toText(caller) # " :: " #
+            method # " :: " #
+            message
+        );
+    };
+
+    /// 🛑
+    public query ({caller}) func getCanisterMetrics(parameters: Canistergeek.GetMetricsParameters): async ?Canistergeek.CanisterMetrics {
+        isAdmin(caller);
+        canistergeekMonitor.getMetrics(parameters);
+    };
+
+    /// 🛑
+    public shared ({caller}) func collectCanisterMetrics(): async () {
+        isAdmin(caller);
+        canistergeekMonitor.collectMetrics();
     };
 
     // 🟢 PUBLIC
@@ -75,12 +116,14 @@ shared({caller}) actor class Rex(
     };
 
     public shared({caller}) func balance() : async Ledger.Tokens {
+        canistergeekMonitor.collectMetrics();
         await ledger.account_balance({
             account = personalAccountOfPrincipal(caller);
         });
     };
 
     public shared({caller}) func transfer(amount : Ledger.Tokens, to : Ledger.AccountIdentifier) : async Ledger.TransferResult {
+        canistergeekMonitor.collectMetrics();
         await ledger.transfer({
             memo            = 0;
             amount;
@@ -143,6 +186,10 @@ shared({caller}) actor class Rex(
             #err(#TryCatchTrap(Error.message(e)));
         }) {
             case (#err(e)) {
+                switch (e) {
+                    case (#TryCatchTrap(m)) _log(caller, "mintToken", "ERR :: launchpadMint :: " # m);
+                    case _ ();
+                };
                 revert();
                 // TODO: for now I will just assume that that refund tx does not trap...
                 //       maybe this can be solved by a queue + retrying? 
@@ -175,6 +222,7 @@ shared({caller}) actor class Rex(
     public query func currentlyMinting() : async Nat { minting };
 
     public shared({caller}) func mint(token : Principal, index : Nat) : async Interface.MintResult {
+        canistergeekMonitor.collectMetrics();
         let price = switch(Events.Events.getPrice(events_, token, index)) {
             case (#err(e)) return #err(#Events(e));
             case (#ok(price)) price;
@@ -203,7 +251,6 @@ shared({caller}) actor class Rex(
         };
         switch (await buy(price, token, caller, revert)) {
             case (#ok)  {};
-            // NOTE: Failure here: type mismatch: type on the wire rec_1, expect type nat
             case (#err(e)) return #err(e);
         };
         
@@ -223,11 +270,13 @@ shared({caller}) actor class Rex(
 
     public shared({caller}) func createEvent(data : Events.Data) : async Nat {
         assert(chargeCycles(createEventPrice));
+        canistergeekMonitor.collectMetrics();
         Events.Events.add(events_, caller, data);
     };
 
     public shared({caller}) func updateEvent(index : Nat, data : Events.Data) : async Events.Result<()> {
         assert(chargeCycles(updateEventPrice));
+        canistergeekMonitor.collectMetrics();
         Events.Events.replace(events_, caller, index, data);
     };
 
