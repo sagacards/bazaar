@@ -9,7 +9,7 @@
 ```sh
 cp .env.example .env
 npm i
-npm run makeadmin
+npm run make-admin
 npm run test:dfx
 ```
 
