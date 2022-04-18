@@ -3,8 +3,8 @@ import { readFileSync } from "fs";
 import { ActorSubclass, Identity } from '@dfinity/agent';
 
 import { createActor } from "./actor";
-import { idlFactory as pIDL } from './declarations/progenitus/progenitus.did';
-import { Rex } from "./declarations/progenitus/progenitus.did.d";
+import { idlFactory as pIDL } from './declarations/bazaar/bazaar.did';
+import { Rex } from "./declarations/bazaar/bazaar.did.d";
 import { idlFactory as mlIDL } from './declarations/mock_ledger/mock_ledger.did';
 import { MockLedger } from "./declarations/mock_ledger/mock_ledger.did.d";
 import { idlFactory as nftIDL } from './declarations/mock_nft/mock_nft.did';
@@ -13,15 +13,15 @@ import { Principal } from '@dfinity/principal';
 
 const canisters = JSON.parse(readFileSync(`${__dirname}/../.dfx/local/canister_ids.json`).toString());
 
-const progenitusCID = canisters.progenitus.local;
-export const progenitusPrincipal = Principal.fromText(progenitusCID);
+const bazaarCID = canisters.bazaar.local;
+export const bazaarPrincipal = Principal.fromText(bazaarCID);
 const ledgerCID = canisters.mock_ledger.local;
 export const ledgerPrincipal = Principal.fromText(ledgerCID);
 const nftCID = canisters.mock_nft.local;
 export const nftPrincipal = Principal.fromText(nftCID);
 
 export function launchpadActor(identity? : Identity) : ActorSubclass<Rex> {
-    return createActor(progenitusCID, pIDL, { identity });
+    return createActor(bazaarCID, pIDL, { identity });
 };
 
 export function mockLedgerActor(identity? : Identity) : ActorSubclass<MockLedger> {

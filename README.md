@@ -1,6 +1,4 @@
-# Progenitus
-
-> : descended.
+# Bazaar
 
 ## Tests
 

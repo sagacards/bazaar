@@ -3,7 +3,7 @@ import { Ed25519KeyIdentity } from "@dfinity/identity";
 import { launchpadActor, mockLedgerActor, mockNFTActor } from "../lib";
 import { MockLedger } from "../lib/declarations/mock_ledger/mock_ledger.did.d";
 import { MockNFT } from "../lib/declarations/mock_nft/mock_nft.did.d";
-import { Rex } from "../lib/declarations/progenitus/progenitus.did.d";
+import { Rex } from "../lib/declarations/bazaar/bazaar.did.d";
 import { fetchIdentity } from "../lib/keys";
 
 type Account = {

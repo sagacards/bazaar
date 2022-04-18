@@ -1,6 +1,6 @@
 {
     "canisters": {
-        "progenitus": {
+        "bazaar": {
             "main": "src/main.mo",
             "type": "motoko"
         },
