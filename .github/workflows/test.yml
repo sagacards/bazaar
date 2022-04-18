@@ -5,6 +5,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: aviate-labs/setup-dfx@v0.2.3
+        with:
+          dfx-version: 0.9.3
+          vessel-version: 0.6.3
       - uses: actions/setup-node@v2
         with:
           node-version: '16.x'
