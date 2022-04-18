@@ -29,15 +29,20 @@ shared({caller}) actor class Rex(
     events := [];
 
     private stable var _canistergeekMonitorUD: ? Canistergeek.UpgradeData = null;
+    private stable var _canistergeekLoggerUD: ? Canistergeek.LoggerUpgradeData = null;
 
     system func preupgrade () {
         events := Events.Events.toStable(events_);
         _canistergeekMonitorUD := ? canistergeekMonitor.preupgrade();
+        _canistergeekLoggerUD := ? canistergeekLogger.preupgrade();
     };
 
     system func postupgrade() { 
         canistergeekMonitor.postupgrade(_canistergeekMonitorUD);
         _canistergeekMonitorUD := null;
+
+        canistergeekLogger.postupgrade(_canistergeekLoggerUD);
+        _canistergeekLoggerUD := null;
     };
 
     // 🛑 ADMIN
@@ -88,6 +93,12 @@ shared({caller}) actor class Rex(
             method # " :: " #
             message
         );
+    };
+
+    /// 🛑
+    public query ({caller}) func getCanisterLog(request: ?Canistergeek.CanisterLogRequest) : async ?Canistergeek.CanisterLogResponse {
+        isAdmin(caller);
+        canistergeekLogger.getLog(request);
     };
 
     /// 🛑
