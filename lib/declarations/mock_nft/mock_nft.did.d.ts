@@ -24,7 +24,7 @@ export type Error = { 'NotInAllowlist' : null } |
   { 'IndexNotFound' : bigint };
 export type EventName = string;
 export type MintError = { 'NoneAvailable' : null } |
-  { 'TryCatchTrap' : null };
+  { 'TryCatchTrap' : string };
 export interface MockNFT {
   'addAdmin' : (arg_0: Principal) => Promise<undefined>,
   'balance' : () => Promise<Array<bigint>>,

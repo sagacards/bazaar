@@ -1,5 +1,6 @@
 import Blob "mo:base/Blob";
 import Cycles "mo:base/ExperimentalCycles";
+import Error "mo:base/Error";
 import HashMap "mo:base/HashMap";
 import List "mo:base/List";
 import Principal "mo:base/Principal";
@@ -111,9 +112,9 @@ shared({caller}) actor class Rex(
                 revert();
                 #err(#Transfer(err)); // The transfer failed...
             };
-        }) catch (_) {
+        }) catch (e) {
             revert();
-            #err(#TryCatchTrap); // The ledger trapped.
+            #err(#TryCatchTrap(Error.message(e))); // The ledger trapped.
         };
     };
 
@@ -122,9 +123,9 @@ shared({caller}) actor class Rex(
         revert : () -> ()
     ) : async Interface.MintResult {
         let t : NFT.Interface = actor(Principal.toText(token));
-        let available = try (await t.launchpadTotalAvailable(index)) catch (_) {
+        let available = try (await t.launchpadTotalAvailable(index)) catch (e) {
             revert();
-            return #err(#TryCatchTrap);
+            return #err(#TryCatchTrap(Error.message(e)));
         };
         if (available <= minting) {
             revert();
@@ -138,9 +139,9 @@ shared({caller}) actor class Rex(
         revert : () -> ()
     ) : async Interface.MintResult {
         let t : NFT.Interface = actor(Principal.toText(token));
-        switch(try (await t.launchpadMint(caller)) catch (_) {
+        switch(try (await t.launchpadMint(caller)) catch (e) {
             revert();
-            return #err(#TryCatchTrap);
+            return #err(#TryCatchTrap(Error.message(e)));
         }) {
             case (#err(e)) {
                 // TODO: for now I will just assume that that refund tx does not trap...
