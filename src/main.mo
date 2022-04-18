@@ -135,20 +135,20 @@ shared({caller}) actor class Rex(
     };
 
     private func mintToken(
-        token : Principal, caller : Principal, amount : Ledger.Tokens,
+        token : Principal, caller : Principal, { e8s = amount } : Ledger.Tokens,
         revert : () -> ()
     ) : async Interface.MintResult {
         let t : NFT.Interface = actor(Principal.toText(token));
         switch(try (await t.launchpadMint(caller)) catch (e) {
-            revert();
-            return #err(#TryCatchTrap(Error.message(e)));
+            #err(#TryCatchTrap(Error.message(e)));
         }) {
             case (#err(e)) {
+                revert();
                 // TODO: for now I will just assume that that refund tx does not trap...
                 //       maybe this can be solved by a queue + retrying? 
                 switch (await ledger.transfer({
                     memo            = 0;
-                    amount;
+                    amount          = { e8s = amount + 10_000 }; // Also refund fee.
                     fee             = { e8s = 10_000 };
                     // From the account of the token.
                     from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(token));

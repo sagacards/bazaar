@@ -40,6 +40,14 @@ describe("Mint", () => {
         const user = users[0];
         const err = await user.launchpad.mint(nftPrincipal, 0n);
         assert.isTrue("err" in err);
-        console.log(err);
+        assert.isTrue("Refunded" in (<{ "err": object }>err).err)
+    });
+    it("Check whether price was refunded...", async () => {
+        const user = users[0];
+        const account = await user.launchpad.getPersonalAccount();
+        const balance = await user.ledger.account_balance({ account });
+        assert.equal(balance.e8s, 4_899_990_000n);
+        const minting = await user.launchpad.currentlyMinting();
+        assert.equal(minting, 0n);
     });
 });
