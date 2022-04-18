@@ -1,6 +1,7 @@
 import { assert } from "chai";
 import { admin, users } from "./accounts";
 import { nftPrincipal } from "../lib";
+import { trap } from "./utils/trap";
 
 const time = BigInt(Date.now());
 export const eventData = {
@@ -26,7 +27,7 @@ describe("Events", () => {
     });
     it("Try to create an event as a user.", async () => {
         const user = users[0];
-        user.nft.launchpadEventCreate(eventData).then(() => assert.fail()).catch(/* OK */);
+        await trap(user.nft.launchpadEventCreate(eventData));
     });
     it("Create an event as an admin.", async () => {
         let i = await admin.nft.launchpadEventCreate(eventData);
@@ -41,7 +42,7 @@ describe("Events", () => {
     });
     it("Try to delete an event as a user.", async () => {
         const user = users[0];
-        user.launchpad.removeEvent(nftPrincipal, 0n).then(() => assert.fail()).catch(/* OK */);
+        await trap(user.launchpad.removeEvent(nftPrincipal, 0n));
     });
     it("Delete the created event as an admin.", async () => {
         await admin.launchpad.removeEvent(nftPrincipal, 0n);

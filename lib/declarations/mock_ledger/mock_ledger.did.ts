@@ -36,6 +36,7 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
         [BlockIndex],
         [],
       ),
+    'reset' : IDL.Func([], [], ['oneway']),
     'transfer' : IDL.Func([TransferArgs], [TransferResult], []),
     'zeroAccount' : IDL.Func([IDL.Principal], [AccountIdentifier], ['query']),
   });
