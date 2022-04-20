@@ -155,7 +155,7 @@ shared({caller}) actor class Rex(
             revert();
             return #err(#TryCatchTrap(Error.message(e)));
         };
-        if (available <= minting) {
+        if (available == 0 or available < minting) {
             revert();
             return #err(#NoneAvailable);
         };
@@ -170,7 +170,7 @@ shared({caller}) actor class Rex(
     ) : async Result.Result<(), Interface.MintError> {
         try (switch (await ledger.transfer({
             memo            = 0;
-            amount          = { e8s = amount - 10_000 };
+            amount          = { e8s = amount - 10_000};
             fee             = { e8s = 10_000 };
             // From the account of the caller.
             from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(caller));

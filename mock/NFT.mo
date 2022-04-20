@@ -80,7 +80,7 @@ shared({caller = owner}) actor class MockNFT(
         assert(caller == Principal.fromActor(lp));
         if (trap) assert(false);
 
-        if (i >= total) return #err(#NoneAvailable);
+        if (total <= i) return #err(#NoneAvailable);
         let buffer = switch (ledger.get(p)) {
             case (null) {
                 let b = Buffer.Buffer<Nat>(1);
