@@ -40,7 +40,7 @@ module {
         public func fromStable(list : Allowlist) : Allowlist_ = HashMap.fromIter(
             list.vals(), list.size(), Principal.equal, Principal.hash
         );
-        
+
         public func removeSpot(list_ : Allowlist_, user : Principal) : Result<Int> {
             ignore do ? {
                 let spots = list_.get(user)!!;
@@ -230,7 +230,7 @@ module {
             };
         };
 
-        public func getEventData_(events_ : Events_, token : Principal, index : Nat) : Result<Data_> = switch (events_.get(token)) {
+        private func getEventIndexData_(events_ : Events_, token : Principal, index : Nat) : Result<Data_> = switch (events_.get(token)) {
             case (null)     #err(#TokenNotFound(token));
             case (? buffer) switch(buffer.getOpt(index)) {
                 case (null)    #err(#IndexNotFound(index));
@@ -239,34 +239,32 @@ module {
         };
 
         public func getSpots(events_ : Events_, token : Principal, index : Nat, user : Principal) : Result<Int> {
-            switch (getEventData_(events_, token, index)) {
+            switch (getEventIndexData_(events_, token, index)) {
                 case (#err(e))         #err(e);
                 case (#ok(_, access_)) #ok(Access.getSpots(access_, user));
             };
         };
 
         public func getPrice(events_ : Events_, token : Principal, index : Nat) : Result<Ledger.Tokens> {
-            switch (getEventData_(events_, token, index)) {
+            switch (getEventIndexData_(events_, token, index)) {
                 case (#err(e))           #err(e);
                 case (#ok({ price }, _)) #ok(price);
             };
         };
 
         public func removeSpot(
-            events_ : Events_, 
-            token   : Principal, index : Nat,
+            events_ : Events_,            token   : Principal, index : Nat,
             user    : Principal,
-        ) : Result<Int> = switch (getEventData_(events_, token, index)) {
+        ) : Result<Int> = switch (getEventIndexData_(events_, token, index)) {
             case (#err(e))         #err(e);
             case (#ok(_, access_)) Access.removeSpot(access_, user);
         };
 
         // @pre: token:index event exists.
         public func addSpot(
-            events_ : Events_, 
-            token   : Principal, index : Nat,
+            events_ : Events_,            token   : Principal, index : Nat,
             user    : Principal,
-        ) = switch (getEventData_(events_, token, index)) {
+        ) = switch (getEventIndexData_(events_, token, index)) {
             case (#err(e)) {};
             case (#ok(_, access_)) Access.addSpot(access_, user);
         };

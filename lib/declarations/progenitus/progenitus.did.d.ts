@@ -22,27 +22,44 @@ export interface Data {
 export type Error = { 'NotInAllowlist' : null } |
   { 'TokenNotFound' : Principal } |
   { 'IndexNotFound' : bigint };
+export type Event = [Principal, Data, bigint];
 export type EventName = string;
+export type Events = Array<Event>;
 export type MintError = { 'NoneAvailable' : null } |
-  { 'TryCatchTrap' : string };
-export interface MockNFT {
-  'addAdmin' : (arg_0: Principal) => Promise<undefined>,
-  'balance' : () => Promise<Array<bigint>>,
-  'getAdmins' : () => Promise<Array<Principal>>,
-  'getPersonalAccount' : () => Promise<AccountIdentifier>,
-  'launchpadEventCreate' : (arg_0: Data) => Promise<bigint>,
-  'launchpadEventUpdate' : (arg_0: bigint, arg_1: Data) => Promise<Result__1>,
-  'launchpadMint' : (arg_0: Principal) => Promise<Result>,
-  'launchpadTotalAvailable' : (arg_0: bigint) => Promise<bigint>,
-  'launchpadTotalSupply' : (arg_0: bigint) => Promise<bigint>,
-  'reset' : (arg_0: bigint) => Promise<undefined>,
-  'toggleTrap' : (arg_0: boolean) => Promise<undefined>,
-  'transfer' : (arg_0: AccountIdentifier) => Promise<TransferResult>,
-}
-export type Result = { 'ok' : bigint } |
+  { 'Refunded' : null } |
+  { 'TryCatchTrap' : string } |
+  { 'NoMintingSpot' : null } |
+  { 'Transfer' : TransferError } |
+  { 'Events' : Error };
+export type MintResult = { 'ok' : bigint } |
   { 'err' : MintError };
-export type Result__1 = { 'ok' : null } |
+export type Result = { 'ok' : null } |
   { 'err' : Error };
+export type Result_1 = { 'ok' : Data } |
+  { 'err' : Error };
+export type Result__1 = { 'ok' : bigint } |
+  { 'err' : Error };
+export interface Rex {
+  'addAdmin' : (arg_0: Principal) => Promise<undefined>,
+  'balance' : () => Promise<Tokens>,
+  'createEvent' : (arg_0: Data) => Promise<bigint>,
+  'currentlyMinting' : () => Promise<bigint>,
+  'getAdmins' : () => Promise<Array<Principal>>,
+  'getAllEvents' : () => Promise<Events>,
+  'getAllowlistSpots' : (arg_0: Principal, arg_1: bigint) => Promise<Result__1>,
+  'getEvent' : (arg_0: Principal, arg_1: bigint) => Promise<Result_1>,
+  'getEvents' : (arg_0: Array<Principal>) => Promise<Events>,
+  'getEventsOfToken' : (arg_0: Principal) => Promise<Array<Data>>,
+  'getOwnEvents' : () => Promise<Array<Data>>,
+  'getPersonalAccount' : () => Promise<AccountIdentifier>,
+  'mint' : (arg_0: Principal, arg_1: bigint) => Promise<MintResult>,
+  'removeAdmin' : (arg_0: Principal) => Promise<undefined>,
+  'removeEvent' : (arg_0: Principal, arg_1: bigint) => Promise<undefined>,
+  'transfer' : (arg_0: Tokens, arg_1: AccountIdentifier) => Promise<
+      TransferResult
+    >,
+  'updateEvent' : (arg_0: bigint, arg_1: Data) => Promise<Result>,
+}
 export type Spots = [] | [bigint];
 export type Time = bigint;
 export interface Tokens { 'e8s' : bigint }
@@ -56,4 +73,4 @@ export type TransferError = {
 export type TransferResult = { 'Ok' : BlockIndex } |
   { 'Err' : TransferError };
 export type URL = string;
-export interface _SERVICE extends MockNFT {}
+export interface _SERVICE extends Rex {}

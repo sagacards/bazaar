@@ -1,55 +1,171 @@
+import Blob "mo:base/Blob";
+import Buffer "mo:base/Buffer";
+import Iter "mo:base/Iter";
+import Int "mo:base/Int";
+import Nat8 "mo:base/Nat8";
 import Principal "mo:base/Principal";
 
 import Events "../src/Events";
-import Event "../src/Events/Event";
 
-let nft0 = Principal.fromText("aaaaa-aa");
-let nft1 = Principal.fromText("utpk4-hka");
-
-let lp = Events.Class({
-    events = [];
-});
-
-let emptyDetails = {
-    iconImageUrl           = "";
-    bannerImageUrl         = "";
-    previewImageUrl        = "";
-    descriptionMarkdownUrl = "";
+func tokenN(index : Nat) : Principal = token(Nat8.fromNat(index));
+func token(index : Nat8) : Principal {
+    Principal.fromBlob(Blob.fromArray([
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, index,
+        0x01
+    ]))
 };
 
-func event(name : Text, accessType : Event.Access) : Event.Data = {
-    name;
+func user(index : Nat) : Principal = tokenN(100 + index);
+
+func event(access : Events.Access, e8s : Nat64) : Events.Data = eventN(token(0), 0, access, e8s);
+
+func eventN(
+    token : Principal, index : Nat, // Only used to construct the name.
+    access : Events.Access, e8s : Nat64
+) : Events.Data = {
+    accessType  = access;
     description = "";
-    startsAt    = 0;
-    endsAt      = 1;
-    price       = { e8s = 0 };
-    accessType;
-    details     = emptyDetails;
+    details = {
+        bannerImageUrl         = "";
+        descriptionMarkdownUrl = "";
+        iconImageUrl           = "";
+        previewImageUrl        = "";
+    };
+    endsAt   = 0;
+    name     = eventName(token, index);
+    price    = { e8s };
+    startsAt = 0;
 };
 
+func eventName(token : Principal, index : Nat) : Text = Principal.toText(token) # ":" # Int.toText(index);
+
+// CRUD.
 do {
-    let i = lp.createEvent(nft0, event("e0", #Public));
-    assert(i == 0);
-    let es = lp.getEvents([nft0]);
-    assert(es == lp.getAllEvents());
-    assert(es.size() == 1);
-    assert(es[0].0 == nft0);
-    assert(es[0].1.name == "e0");
-    // etc.
+    let events : Events.Events_ = Events.Events.fromStable([]);
+
+    // Add an event.
+    let index = Events.Events.add(events, token(0), event(#Public, 10_000));
+    assert(index == 0);
+    assert(events.size() == 1);
+
+    // Get the event.
+    switch (Events.Events.getEventIndexData(events, token(0), index)) {
+        case (#err(_)) assert(false);
+        case (#ok(data)) {
+            assert(data.accessType == #Public);
+            assert(data.price.e8s == 10_000);
+        };
+    };
+
+    // Replace the event.
+    switch (Events.Events.replace(events, token(0), index, event(#Public, 0))) {
+        case (#err(_)) assert(false);
+        case (_) {};
+    };
+    assert(events.size() == 1);
+
+    // Get the (replaced) event.
+    switch (Events.Events.getEventIndexData(events, token(0), index)) {
+        case (#err(_))  assert(false);
+        case (#ok(data)) assert(data.price.e8s == 0);
+    };
+
+    // Delete the event.
+    Events.Events.remove(events, token(0), index);
+    assert(events.size() == 1);
+    assert(Events.Events.toStable(events) == []);
 };
 
+// Get Event Data
 do {
-    let a = Principal.fromText("2ibo7-dia");
-    let b = Principal.fromText("ihmrf-7yaaa");
-    let c = Principal.fromText("75a5s-eqaaa-aa");
-    let d = Principal.fromText("efcn6-haaaa-aaa");
-    let e = Principal.fromText("yyrpo-hiaaa-aaaaa");
+    let T_AMOUNT = 10;
+    let E_AMOUNT = 3;
 
-    let i = lp.createEvent(nft1, event("e1", #Private([(a, ?-1),  (b, ?5), (c, ?2), (d, ?1), (e, null)])));
-    assert(i == 0);
-    let es = lp.getEvents([nft1]);
-    assert(es != lp.getAllEvents());
-    assert(es.size() == 1);
-    assert(es[0].0 == nft1);
-    assert(es[0].1.name == "e1");
+    let events : Events.Events_ = Events.Events.fromStable([]);
+    for (i in Iter.range(0, T_AMOUNT - 1)) {
+        for (j in Iter.range(0, E_AMOUNT - 1)) {
+            let tk = tokenN(i);
+            let index = Events.Events.add(events, tk, eventN(tk, j, #Public, 0));
+            assert(index == j);
+        };
+    };
+    assert(Events.Events.toStableFilter(events, [token(0), token(1), token(2)]).size() == 3 * E_AMOUNT);
+    assert(Events.Events.toStable(events).size() == T_AMOUNT * E_AMOUNT);
+
+    let tk = token(0);
+    switch (Events.Events.getEventData(events, tk)) {
+        case (#err(_)) assert(false);
+        case (#ok(data)) {
+            assert(data.size() == E_AMOUNT);
+            var i = 0;
+            for (d in data.vals()) {
+                assert(d.name == eventName(tk, i));
+                i += 1;
+            };
+        };
+    };
+    switch (Events.Events.getEventIndexData(events, tk, 1)) {
+        case (#err(_))   assert(false);
+        case (#ok(data)) assert(data.name == eventName(tk, 1));
+    };
+
+    // Spots...
+    assert(Events.Events.getSpots(events, tk, 0, user(0)) == #ok(-1));
+    assert(Events.Events.getPrice(events, tk, 0) == #ok({ e8s = 0 }));
+
+    // Remove a spot.
+    assert(Events.Events.removeSpot(events, tk, 0, user(0)) == #ok(-1));
+
+    // Add a spot.
+    Events.Events.addSpot(events, tk, 0, user(0));
+    assert(Events.Events.getSpots(events, tk, 0, user(0)) == #ok(-1));
+};
+
+// Private Sale
+do {
+    let U_AMOUNT = 10;
+    let events : Events.Events_ = Events.Events.fromStable([]);
+
+    let tk = token(0);
+    let spots = Buffer.Buffer<(Principal, ?Int)>(U_AMOUNT);
+    for (i in Iter.range(0, U_AMOUNT - 1)) spots.add(user(i), ?(i+1));
+    let index = Events.Events.add(events, tk, event(#Private(spots.toArray()), 0));
+    for (i in Iter.range(0, U_AMOUNT - 1)) assert(Events.Events.getSpots(events, tk, 0, user(i)) == #ok(i+1));
+
+    for (i in Iter.range(0, U_AMOUNT - 1)) {
+        assert(Events.Events.removeSpot(events, tk, 0, user(i)) == #ok(0));
+        for (j in Iter.range(i + 1, U_AMOUNT - 1)) {
+            assert(Events.Events.removeSpot(events, tk, 0, user(j)) == #ok(j-i));
+        };
+    };
+
+    // No data.
+    switch (Events.Events.getEventIndexData(events, tk, 0)) {
+        case (#err(_))   assert(false);
+        case (#ok(data)) assert(data.accessType == #Private([]));
+    };
+
+    // Restore original data.
+    for (i in Iter.range(0, U_AMOUNT - 1)) {
+        for (j in Iter.range(0, i)) Events.Events.addSpot(events, tk, 0, user(i));
+    };
+    switch (Events.Events.getEventIndexData(events, tk, 0)) {
+        case (#err(_))   assert(false);
+        case (#ok(data)) switch (data.accessType) {
+            case (#Public) assert(false);
+            case (#Private(list)) {
+                for ((p, n) in list.vals()) {
+                    var found = false;
+                    label l for ((q, m) in spots.vals()) {
+                        if (p == q  and n == m) {
+                            found := true;
+                            break l;
+                        };
+                    };
+                    assert(found);
+                };
+            };
+        };
+    };
 };

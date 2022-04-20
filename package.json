@@ -3,7 +3,9 @@
     "make-admin": "npx ts-node -e 'require(\"./lib/keys.ts\").generateKey(\"admin\")'",
     "deploy:local": "dfx start --emulator --background --clean && ./.scripts/dfx-deploy",
     "test": "mocha --timeout 60000 -r ts-node/register 'tests/**/*.ts'",
-    "test:dfx": "npm run deploy:local && npm test && dfx stop"
+    "test:dfx": "npm run deploy:local && npm test && dfx stop",
+    "chaos": "CHAOS=true mocha --timeout 3600000 -r ts-node/register 'tests/chaos.test.ts'",
+    "chaos:dfx": "npm run deploy:local && npm run chaos && dfx stop"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",

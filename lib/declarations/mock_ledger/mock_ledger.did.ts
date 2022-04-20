@@ -36,6 +36,15 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
         [BlockIndex],
         [],
       ),
+    'mintAll' : IDL.Func(
+        [
+          IDL.Vec(
+            IDL.Record({ 'to' : AccountIdentifier__1, 'amount' : Tokens })
+          ),
+        ],
+        [BlockIndex],
+        [],
+      ),
     'reset' : IDL.Func([], [], ['oneway']),
     'transfer' : IDL.Func([TransferArgs], [TransferResult], []),
     'zeroAccount' : IDL.Func([IDL.Principal], [AccountIdentifier], ['query']),

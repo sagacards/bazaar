@@ -37,7 +37,7 @@ shared({caller}) actor class Rex(
         _canistergeekLoggerUD := ? canistergeekLogger.preupgrade();
     };
 
-    system func postupgrade() { 
+    system func postupgrade() {
         canistergeekMonitor.postupgrade(_canistergeekMonitorUD);
         _canistergeekMonitorUD := null;
 
@@ -146,6 +146,22 @@ shared({caller}) actor class Rex(
         });
     };
 
+    private func totalAvailable(
+        token : Principal, index : Nat,
+        revert : () -> ()
+    ) : async Interface.MintResult {
+        let t : NFT.Interface = actor(Principal.toText(token));
+        let available = try (await t.launchpadTotalAvailable(index)) catch (e) {
+            revert();
+            return #err(#TryCatchTrap(Error.message(e)));
+        };
+        if (available <= minting) {
+            revert();
+            return #err(#NoneAvailable);
+        };
+        #ok(available);
+    };
+
     /// Returns a non null MintError if either the transfer failed, or if the ledger trapped.
     private func buy(
         amount : Ledger.Tokens, token : Principal, 
@@ -171,22 +187,6 @@ shared({caller}) actor class Rex(
             revert();
             #err(#TryCatchTrap(Error.message(e))); // The ledger trapped.
         };
-    };
-
-    private func totalAvailable(
-        token : Principal, index : Nat,
-        revert : () -> ()
-    ) : async Interface.MintResult {
-        let t : NFT.Interface = actor(Principal.toText(token));
-        let available = try (await t.launchpadTotalAvailable(index)) catch (e) {
-            revert();
-            return #err(#TryCatchTrap(Error.message(e)));
-        };
-        if (available <= minting) {
-            revert();
-            return #err(#NoneAvailable);
-        };
-        #ok(available);
     };
 
     private func mintToken(
@@ -241,31 +241,24 @@ shared({caller}) actor class Rex(
         };
         switch (Events.Events.removeSpot(events_, token, index, caller)) {
             case (#err(e)) return #err(#Events(e));
-            case (#ok(v))  if (v == 0) return #err(#NoMintingSpot);
+            case (#ok(_))  {};
         };
 
-        let available = switch (await totalAvailable(token, index, func () {
-            // Revert call.
-            Events.Events.addSpot(events_, token, index, caller);
-        })) {
-            case (#ok(a))  a;
-            case (#err(e)) return #err(e);
-        };
-
-        // TODO: Check that we subtract 1 on every occurrence that the function exits.
-        // TODO: Add endpoint to reset this?
         minting += 1;
-
         let revert = func () {
             // Revert call.
             Events.Events.addSpot(events_, token, index, caller);
             minting -= 1;
         };
+
+        let available = switch (await totalAvailable(token, index, revert)) {
+            case (#ok(a))  a;
+            case (#err(e)) return #err(e);
+        };
         switch (await buy(price, token, caller, revert)) {
             case (#ok)  {};
             case (#err(e)) return #err(e);
         };
-        
         await mintToken(token, caller, price, revert);
     };
 
@@ -275,7 +268,7 @@ shared({caller}) actor class Rex(
     private let updateEventPrice = 0;
 
     private func chargeCycles(amount : Nat) : Bool {
-        if (Cycles.available() < amount)        return false;
+        if (Cycles.available() < amount)    return false;
         if (Cycles.accept(amount) < amount) return false;
         true;
     };

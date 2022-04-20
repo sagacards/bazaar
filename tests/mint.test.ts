@@ -1,6 +1,6 @@
 import { assert } from "chai";
 import { nftPrincipal } from "../lib";
-import { eventData } from "./2_events.test";
+import { eventData } from "./events.test";
 import { admin, mint, users } from "./accounts";
 
 
@@ -8,8 +8,7 @@ describe("Mint", () => {
     const user = users[0];
 
     before(async () => {
-        const account = await user.launchpad.getPersonalAccount();
-        await mint(account, 100_00_000_000n);
+        await mint(user, 100_00_000_000n);
 
         let i = await admin.nft.launchpadEventCreate(eventData);
         assert.equal(i, 0n);
