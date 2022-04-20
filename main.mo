@@ -164,13 +164,13 @@ shared({caller}) actor class Rex(
 
     /// Returns a non null MintError if either the transfer failed, or if the ledger trapped.
     private func buy(
-        amount : Ledger.Tokens, token : Principal, 
+        { e8s = amount } : Ledger.Tokens, token : Principal, 
         caller : Principal,
         revert : () -> ()
     ) : async Result.Result<(), Interface.MintError> {
         try (switch (await ledger.transfer({
             memo            = 0;
-            amount;
+            amount          = { e8s = amount - 10_000 };
             fee             = { e8s = 10_000 };
             // From the account of the caller.
             from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(caller));
@@ -190,7 +190,7 @@ shared({caller}) actor class Rex(
     };
 
     private func mintToken(
-        token : Principal, caller : Principal, { e8s = amount } : Ledger.Tokens,
+        token : Principal, caller : Principal, amount : Ledger.Tokens,
         revert : () -> ()
     ) : async Interface.MintResult {
         let t : NFT.Interface = actor(Principal.toText(token));
@@ -207,7 +207,7 @@ shared({caller}) actor class Rex(
                 //       maybe this can be solved by a queue + retrying? 
                 switch (await ledger.transfer({
                     memo            = 0;
-                    amount          = { e8s = amount + 10_000 }; // Also refund fee.
+                    amount;
                     fee             = { e8s = 10_000 };
                     // From the account of the token.
                     from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(token));

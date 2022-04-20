@@ -30,11 +30,11 @@ describe("Mint", () => {
     it("Check balances after mint.", async () => {
         const account = await user.launchpad.getPersonalAccount();
         const balance = await user.ledger.account_balance({ account });
-        assert.equal(balance.e8s, 9_899_990_000n);
+        assert.equal(balance.e8s, 9_900_000_000n);
 
         const nftAccount = await user.nft.getPersonalAccount();
         const nftBalance = await user.ledger.account_balance({ account: nftAccount });
-        assert.equal(nftBalance.e8s, 1_00_000_000n)
+        assert.equal(nftBalance.e8s, 99_990_000n)
     });
     it("Mint, but NFT traps.", async () => {
         await admin.nft.toggleTrap(true);
@@ -46,7 +46,7 @@ describe("Mint", () => {
     it("Check whether price was refunded...", async () => {
         const account = await user.launchpad.getPersonalAccount();
         const balance = await user.ledger.account_balance({ account });
-        assert.equal(balance.e8s, 9_899_990_000n);
+        assert.equal(balance.e8s, 9_900_000_000n);
         const minting = await user.launchpad.currentlyMinting();
         assert.equal(minting, 0n);
     });
