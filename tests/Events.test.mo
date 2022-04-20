@@ -111,15 +111,22 @@ do {
     };
 
     // Spots...
-    assert(Events.Events.getSpots(events, tk, 0, user(0)) == #ok(-1));
-    assert(Events.Events.getPrice(events, tk, 0) == #ok({ e8s = 0 }));
+    let data = switch (Events.Events.getEventIndexData_(events, tk, 0)) {
+        case (#err(_)) {
+            assert(false);
+            loop {};
+        };
+        case (#ok(data)) data;
+    };
+    assert(data.metadata.price == { e8s = 0 });
+    assert(Events.Access.getSpots(data.access, user(0)) == -1);
 
     // Remove a spot.
-    assert(Events.Events.removeSpot(events, tk, 0, user(0)) == #ok(-1));
+    assert(Events.Access.removeSpot(data.access, user(0)) == #ok(-1));
 
     // Add a spot.
-    Events.Events.addSpot(events, tk, 0, user(0));
-    assert(Events.Events.getSpots(events, tk, 0, user(0)) == #ok(-1));
+    Events.Access.addSpot(data.access, user(0));
+    assert(Events.Access.getSpots(data.access, user(0)) == -1);
 };
 
 // Private Sale
@@ -131,12 +138,19 @@ do {
     let spots = Buffer.Buffer<(Principal, ?Int)>(U_AMOUNT);
     for (i in Iter.range(0, U_AMOUNT - 1)) spots.add(user(i), ?(i+1));
     let index = Events.Events.add(events, tk, event(#Private(spots.toArray()), 0));
-    for (i in Iter.range(0, U_AMOUNT - 1)) assert(Events.Events.getSpots(events, tk, 0, user(i)) == #ok(i+1));
+    let data = switch (Events.Events.getEventIndexData_(events, tk, 0)) {
+        case (#err(_)) {
+            assert(false);
+            loop {};
+        };
+        case (#ok(data)) data;
+    };
+    for (i in Iter.range(0, U_AMOUNT - 1)) assert(Events.Access.getSpots(data.access, user(i)) == i+1);
 
     for (i in Iter.range(0, U_AMOUNT - 1)) {
-        assert(Events.Events.removeSpot(events, tk, 0, user(i)) == #ok(0));
+        assert(Events.Access.removeSpot(data.access, user(i)) == #ok(0));
         for (j in Iter.range(i + 1, U_AMOUNT - 1)) {
-            assert(Events.Events.removeSpot(events, tk, 0, user(j)) == #ok(j-i));
+            assert(Events.Access.removeSpot(data.access, user(j)) == #ok(j-i));
         };
     };
 
@@ -148,7 +162,7 @@ do {
 
     // Restore original data.
     for (i in Iter.range(0, U_AMOUNT - 1)) {
-        for (j in Iter.range(0, i)) Events.Events.addSpot(events, tk, 0, user(i));
+        for (j in Iter.range(0, i)) Events.Access.addSpot(data.access, user(i));
     };
     switch (Events.Events.getEventIndexData(events, tk, 0)) {
         case (#err(_))   assert(false);

@@ -107,12 +107,16 @@ export type Result_1 = { 'ok' : Data } |
   { 'err' : Error };
 export type Result__1 = { 'ok' : bigint } |
   { 'err' : Error };
+export type Result__1_1 = { 'ok' : bigint } |
+  { 'err' : Error };
 export interface Rex {
   'addAdmin' : (arg_0: Principal) => Promise<undefined>,
   'balance' : () => Promise<Tokens>,
   'collectCanisterMetrics' : () => Promise<undefined>,
   'createEvent' : (arg_0: Data) => Promise<bigint>,
-  'currentlyMinting' : () => Promise<bigint>,
+  'currentlyMinting' : (arg_0: Principal, arg_1: bigint) => Promise<
+      Result__1_1
+    >,
   'getAdmins' : () => Promise<Array<Principal>>,
   'getAllEvents' : () => Promise<Events>,
   'getAllowlistSpots' : (arg_0: Principal, arg_1: bigint) => Promise<Result__1>,

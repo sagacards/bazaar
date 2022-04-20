@@ -116,7 +116,10 @@ shared({caller}) actor class Rex(
     // 🟢 PUBLIC
 
     public query({caller}) func getAllowlistSpots(token : Principal, index : Nat) : async Result.Result<Int, Events.Error> {
-        Events.Events.getSpots(events_, token, index, caller);
+        switch (Events.Events.getEventIndexData_(events_, token, index)) {
+            case (#err(e))         #err(e);
+            case (#ok({ access })) #ok(Events.Access.getSpots(access, caller));
+        };
     };
 
     public query({caller}) func getPersonalAccount() : async Ledger.AccountIdentifier {
@@ -148,14 +151,14 @@ shared({caller}) actor class Rex(
 
     private func totalAvailable(
         token : Principal, index : Nat,
-        revert : () -> ()
+        data : Events.Data_, revert : () -> ()
     ) : async Interface.MintResult {
         let t : NFT.Interface = actor(Principal.toText(token));
         let available = try (await t.launchpadTotalAvailable(index)) catch (e) {
             revert();
             return #err(#TryCatchTrap(Error.message(e)));
         };
-        if (available == 0 or available < minting) {
+        if (available == 0 or available < data.minting) {
             revert();
             return #err(#NoneAvailable);
         };
@@ -191,7 +194,7 @@ shared({caller}) actor class Rex(
 
     private func mintToken(
         token : Principal, caller : Principal, amount : Ledger.Tokens,
-        revert : () -> ()
+        data : Events.Data_, revert : () -> ()
     ) : async Interface.MintResult {
         let t : NFT.Interface = actor(Principal.toText(token));
         switch(try (await t.launchpadMint(caller)) catch (e) {
@@ -220,38 +223,39 @@ shared({caller}) actor class Rex(
                 };
             };
             case (#ok(n)) {
-                minting -= 1;
+                data.minting -= 1;
                 #ok(n);
             };
         };
     };
 
-    /// The amount of principals that are currently minting...
-    /// It is basically a simple mutex lock?...
-    private var minting = 0;
-
     /// Returns how many principals are currently waiting on the mint endpoint.
-    public query func currentlyMinting() : async Nat { minting };
+    public query func currentlyMinting(token : Principal, index : Nat) : async Result.Result<Nat, Events.Error> {
+        switch (Events.Events.getEventIndexData_(events_, token, index)) {
+            case (#err(e))   #err(e);
+            case (#ok(data)) #ok(data.minting);
+        };
+    };
 
     public shared({caller}) func mint(token : Principal, index : Nat) : async Interface.MintResult {
         canistergeekMonitor.collectMetrics();
-        let price = switch(Events.Events.getPrice(events_, token, index)) {
-            case (#err(e)) return #err(#Events(e));
-            case (#ok(price)) price;
+        let data = switch (Events.Events.getEventIndexData_(events_, token, index)) {
+            case (#err(e))   return #err(#Events(e));
+            case (#ok(data)) data;
         };
-        switch (Events.Events.removeSpot(events_, token, index, caller)) {
+        let price = data.metadata.price;
+        switch (Events.Access.removeSpot(data.access, caller)) {
             case (#err(e)) return #err(#Events(e));
             case (#ok(_))  {};
         };
 
-        minting += 1;
+        data.minting += 1;
         let revert = func () {
-            // Revert call.
-            Events.Events.addSpot(events_, token, index, caller);
-            minting -= 1;
+            Events.Access.addSpot(data.access, caller);
+            data.minting -= 1;
         };
 
-        let available = switch (await totalAvailable(token, index, revert)) {
+        let available = switch (await totalAvailable(token, index, data, revert)) {
             case (#ok(a))  a;
             case (#err(e)) return #err(e);
         };
@@ -259,7 +263,7 @@ shared({caller}) actor class Rex(
             case (#ok)  {};
             case (#err(e)) return #err(e);
         };
-        await mintToken(token, caller, price, revert);
+        await mintToken(token, caller, price, data, revert);
     };
 
     // 🚀 LAUNCHPAD

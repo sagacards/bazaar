@@ -22,13 +22,14 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
     'price' : Tokens,
     'endsAt' : Time,
   });
-  const Event = IDL.Tuple(IDL.Principal, Data, IDL.Nat);
-  const Events = IDL.Vec(Event);
   const Error = IDL.Variant({
     'NotInAllowlist' : IDL.Null,
     'TokenNotFound' : IDL.Principal,
     'IndexNotFound' : IDL.Nat,
   });
+  const Result__1_1 = IDL.Variant({ 'ok' : IDL.Nat, 'err' : Error });
+  const Event = IDL.Tuple(IDL.Principal, Data, IDL.Nat);
+  const Events = IDL.Vec(Event);
   const Result__1 = IDL.Variant({ 'ok' : IDL.Int, 'err' : Error });
   const GetLogMessagesFilter = IDL.Record({
     'analyzeCount' : IDL.Nat32,
@@ -141,7 +142,11 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
     'balance' : IDL.Func([], [Tokens], []),
     'collectCanisterMetrics' : IDL.Func([], [], []),
     'createEvent' : IDL.Func([Data], [IDL.Nat], []),
-    'currentlyMinting' : IDL.Func([], [IDL.Nat], ['query']),
+    'currentlyMinting' : IDL.Func(
+        [IDL.Principal, IDL.Nat],
+        [Result__1_1],
+        ['query'],
+      ),
     'getAdmins' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getAllEvents' : IDL.Func([], [Events], ['query']),
     'getAllowlistSpots' : IDL.Func(

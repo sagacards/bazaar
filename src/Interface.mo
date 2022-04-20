@@ -37,7 +37,7 @@ module Interface {
         balance : shared () -> async Ledger.Tokens;
         transfer : shared (amount : Ledger.Tokens, to : Ledger.AccountIdentifier) -> async Ledger.TransferResult;
         mint : shared (token : Principal, index : Nat) -> async MintResult;
-        currentlyMinting : query () -> async Nat;
+        currentlyMinting : query (token : Principal, index : Nat) -> async Result.Result<Nat, Events.Error>;
     };
 
     public type Events = actor {

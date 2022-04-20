@@ -47,7 +47,8 @@ describe("Mint", () => {
         const account = await user.launchpad.getPersonalAccount();
         const balance = await user.ledger.account_balance({ account });
         assert.equal(balance.e8s, 9_900_000_000n);
-        const minting = await user.launchpad.currentlyMinting();
-        assert.equal(minting, 0n);
+        const minting = await user.launchpad.currentlyMinting(nftPrincipal, 0n);
+        assert.isTrue("ok" in minting);
+        assert.equal((<{ "ok": bigint }>minting).ok, 0n);
     });
 });
