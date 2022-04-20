@@ -37,7 +37,7 @@ shared({caller}) actor class Rex(
         _canistergeekLoggerUD := ? canistergeekLogger.preupgrade();
     };
 
-    system func postupgrade() { 
+    system func postupgrade() {
         canistergeekMonitor.postupgrade(_canistergeekMonitorUD);
         _canistergeekMonitorUD := null;
 
@@ -116,7 +116,10 @@ shared({caller}) actor class Rex(
     // 🟢 PUBLIC
 
     public query({caller}) func getAllowlistSpots(token : Principal, index : Nat) : async Result.Result<Int, Events.Error> {
-        Events.Events.getSpots(events_, token, index, caller);
+        switch (Events.Events.getEventIndexData_(events_, token, index)) {
+            case (#err(e))         #err(e);
+            case (#ok({ access })) #ok(Events.Access.getSpots(access, caller));
+        };
     };
 
     public query({caller}) func getPersonalAccount() : async Ledger.AccountIdentifier {
@@ -146,15 +149,31 @@ shared({caller}) actor class Rex(
         });
     };
 
+    private func totalAvailable(
+        token : Principal, index : Nat,
+        data : Events.Data_, revert : () -> ()
+    ) : async Interface.MintResult {
+        let t : NFT.Interface = actor(Principal.toText(token));
+        let available = try (await t.launchpadTotalAvailable(index)) catch (e) {
+            revert();
+            return #err(#TryCatchTrap(Error.message(e)));
+        };
+        if (available == 0 or available < data.minting) {
+            revert();
+            return #err(#NoneAvailable);
+        };
+        #ok(available);
+    };
+
     /// Returns a non null MintError if either the transfer failed, or if the ledger trapped.
     private func buy(
-        amount : Ledger.Tokens, token : Principal, 
+        { e8s = amount } : Ledger.Tokens, token : Principal, 
         caller : Principal,
         revert : () -> ()
     ) : async Result.Result<(), Interface.MintError> {
         try (switch (await ledger.transfer({
             memo            = 0;
-            amount;
+            amount          = { e8s = amount - 10_000};
             fee             = { e8s = 10_000 };
             // From the account of the caller.
             from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(caller));
@@ -173,25 +192,9 @@ shared({caller}) actor class Rex(
         };
     };
 
-    private func totalAvailable(
-        token : Principal, index : Nat,
-        revert : () -> ()
-    ) : async Interface.MintResult {
-        let t : NFT.Interface = actor(Principal.toText(token));
-        let available = try (await t.launchpadTotalAvailable(index)) catch (e) {
-            revert();
-            return #err(#TryCatchTrap(Error.message(e)));
-        };
-        if (available <= minting) {
-            revert();
-            return #err(#NoneAvailable);
-        };
-        #ok(available);
-    };
-
     private func mintToken(
-        token : Principal, caller : Principal, { e8s = amount } : Ledger.Tokens,
-        revert : () -> ()
+        token : Principal, caller : Principal, amount : Ledger.Tokens,
+        data : Events.Data_, revert : () -> ()
     ) : async Interface.MintResult {
         let t : NFT.Interface = actor(Principal.toText(token));
         switch(try (await t.launchpadMint(caller)) catch (e) {
@@ -207,7 +210,7 @@ shared({caller}) actor class Rex(
                 //       maybe this can be solved by a queue + retrying? 
                 switch (await ledger.transfer({
                     memo            = 0;
-                    amount          = { e8s = amount + 10_000 }; // Also refund fee.
+                    amount;
                     fee             = { e8s = 10_000 };
                     // From the account of the token.
                     from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(token));
@@ -220,53 +223,47 @@ shared({caller}) actor class Rex(
                 };
             };
             case (#ok(n)) {
-                minting -= 1;
+                data.minting -= 1;
                 #ok(n);
             };
         };
     };
 
-    /// The amount of principals that are currently minting...
-    /// It is basically a simple mutex lock?...
-    private var minting = 0;
-
     /// Returns how many principals are currently waiting on the mint endpoint.
-    public query func currentlyMinting() : async Nat { minting };
+    public query func currentlyMinting(token : Principal, index : Nat) : async Result.Result<Nat, Events.Error> {
+        switch (Events.Events.getEventIndexData_(events_, token, index)) {
+            case (#err(e))   #err(e);
+            case (#ok(data)) #ok(data.minting);
+        };
+    };
 
     public shared({caller}) func mint(token : Principal, index : Nat) : async Interface.MintResult {
         canistergeekMonitor.collectMetrics();
-        let price = switch(Events.Events.getPrice(events_, token, index)) {
-            case (#err(e)) return #err(#Events(e));
-            case (#ok(price)) price;
+        let data = switch (Events.Events.getEventIndexData_(events_, token, index)) {
+            case (#err(e))   return #err(#Events(e));
+            case (#ok(data)) data;
         };
-        switch (Events.Events.removeSpot(events_, token, index, caller)) {
+        let price = data.metadata.price;
+        switch (Events.Access.removeSpot(data.access, caller)) {
             case (#err(e)) return #err(#Events(e));
-            case (#ok(v))  if (v == 0) return #err(#NoMintingSpot);
+            case (#ok(_))  {};
         };
 
-        let available = switch (await totalAvailable(token, index, func () {
-            // Revert call.
-            Events.Events.addSpot(events_, token, index, caller);
-        })) {
+        data.minting += 1;
+        let revert = func () {
+            Events.Access.addSpot(data.access, caller);
+            data.minting -= 1;
+        };
+
+        let available = switch (await totalAvailable(token, index, data, revert)) {
             case (#ok(a))  a;
             case (#err(e)) return #err(e);
-        };
-
-        // TODO: Check that we subtract 1 on every occurrence that the function exits.
-        // TODO: Add endpoint to reset this?
-        minting += 1;
-
-        let revert = func () {
-            // Revert call.
-            Events.Events.addSpot(events_, token, index, caller);
-            minting -= 1;
         };
         switch (await buy(price, token, caller, revert)) {
             case (#ok)  {};
             case (#err(e)) return #err(e);
         };
-        
-        await mintToken(token, caller, price, revert);
+        await mintToken(token, caller, price, data, revert);
     };
 
     // 🚀 LAUNCHPAD
@@ -275,7 +272,7 @@ shared({caller}) actor class Rex(
     private let updateEventPrice = 0;
 
     private func chargeCycles(amount : Nat) : Bool {
-        if (Cycles.available() < amount)        return false;
+        if (Cycles.available() < amount)    return false;
         if (Cycles.accept(amount) < amount) return false;
         true;
     };

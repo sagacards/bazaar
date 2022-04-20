@@ -1,4 +1,4 @@
-import 'dotenv/config'
+import 'dotenv/config';
 import { Actor, ActorSubclass, HttpAgent, HttpAgentOptions } from "@dfinity/agent";
 import { IDL } from "@dfinity/candid";
 import { Principal } from "@dfinity/principal";

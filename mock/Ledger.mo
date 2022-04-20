@@ -32,13 +32,25 @@ shared({caller = owner}) actor class MockLedger() : async Ledger.Interface {
         balances   := HashMap.HashMap<AId.AccountIdentifier, Nat64>(0, Blob.equal, Blob.hash);
     };
 
-
     // Custom Endpoint!
     public shared({caller}) func mint(args : { to : Ledger.AccountIdentifier; amount : Ledger.Tokens }) : async Ledger.BlockIndex {
         isAdmin(caller);
         switch (balances.get(args.to)) {
             case (null)      balances.put(args.to, args.amount.e8s);
             case (? balance) balances.put(args.to, balance + args.amount.e8s);
+        };
+        let bI = blockIndex;
+        blockIndex += 1;
+        bI;
+    };
+
+    public shared({caller}) func mintAll(args : [{ to : Ledger.AccountIdentifier; amount : Ledger.Tokens }]) : async Ledger.BlockIndex {
+        isAdmin(caller);
+        for (args in args.vals()) {
+            switch (balances.get(args.to)) {
+                case (null)      balances.put(args.to, args.amount.e8s);
+                case (? balance) balances.put(args.to, balance + args.amount.e8s);
+            };
         };
         let bI = blockIndex;
         blockIndex += 1;

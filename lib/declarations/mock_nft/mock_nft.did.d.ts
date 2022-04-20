@@ -34,6 +34,7 @@ export interface MockNFT {
   'launchpadEventUpdate' : (arg_0: bigint, arg_1: Data) => Promise<Result__1>,
   'launchpadMint' : (arg_0: Principal) => Promise<Result>,
   'launchpadTotalAvailable' : (arg_0: bigint) => Promise<bigint>,
+  'launchpadTotalSupply' : (arg_0: bigint) => Promise<bigint>,
   'reset' : (arg_0: bigint) => Promise<undefined>,
   'toggleTrap' : (arg_0: boolean) => Promise<undefined>,
   'transfer' : (arg_0: AccountIdentifier) => Promise<TransferResult>,

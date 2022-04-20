@@ -55,6 +55,7 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
     'launchpadEventUpdate' : IDL.Func([IDL.Nat, Data], [Result__1], []),
     'launchpadMint' : IDL.Func([IDL.Principal], [Result], []),
     'launchpadTotalAvailable' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
+    'launchpadTotalSupply' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
     'reset' : IDL.Func([IDL.Nat], [], ['oneway']),
     'toggleTrap' : IDL.Func([IDL.Bool], [], ['oneway']),
     'transfer' : IDL.Func([AccountIdentifier], [TransferResult], []),

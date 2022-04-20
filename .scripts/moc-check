@@ -1,5 +1,6 @@
 #!/bin/bash
 
+$(vessel bin)/moc $(vessel sources 2> /dev/null) --check "main.mo"
 for i in $(find src mock -name '*.mo'); do
     echo "$i"
     $(vessel bin)/moc $(vessel sources 2> /dev/null) --check $i

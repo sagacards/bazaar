@@ -40,7 +40,7 @@ module {
         public func fromStable(list : Allowlist) : Allowlist_ = HashMap.fromIter(
             list.vals(), list.size(), Principal.equal, Principal.hash
         );
-        
+
         public func removeSpot(list_ : Allowlist_, user : Principal) : Result<Int> {
             ignore do ? {
                 let spots = list_.get(user)!!;
@@ -230,45 +230,12 @@ module {
             };
         };
 
-        public func getEventData_(events_ : Events_, token : Principal, index : Nat) : Result<Data_> = switch (events_.get(token)) {
+        public func getEventIndexData_(events_ : Events_, token : Principal, index : Nat) : Result<Data_> = switch (events_.get(token)) {
             case (null)     #err(#TokenNotFound(token));
             case (? buffer) switch(buffer.getOpt(index)) {
                 case (null)    #err(#IndexNotFound(index));
                 case (? data_) #ok(data_);
             };
-        };
-
-        public func getSpots(events_ : Events_, token : Principal, index : Nat, user : Principal) : Result<Int> {
-            switch (getEventData_(events_, token, index)) {
-                case (#err(e))         #err(e);
-                case (#ok(_, access_)) #ok(Access.getSpots(access_, user));
-            };
-        };
-
-        public func getPrice(events_ : Events_, token : Principal, index : Nat) : Result<Ledger.Tokens> {
-            switch (getEventData_(events_, token, index)) {
-                case (#err(e))           #err(e);
-                case (#ok({ price }, _)) #ok(price);
-            };
-        };
-
-        public func removeSpot(
-            events_ : Events_, 
-            token   : Principal, index : Nat,
-            user    : Principal,
-        ) : Result<Int> = switch (getEventData_(events_, token, index)) {
-            case (#err(e))         #err(e);
-            case (#ok(_, access_)) Access.removeSpot(access_, user);
-        };
-
-        // @pre: token:index event exists.
-        public func addSpot(
-            events_ : Events_, 
-            token   : Principal, index : Nat,
-            user    : Principal,
-        ) = switch (getEventData_(events_, token, index)) {
-            case (#err(e)) {};
-            case (#ok(_, access_)) Access.addSpot(access_, user);
         };
     };
 
@@ -294,25 +261,30 @@ module {
         accessType  : Access;
     };
 
-    public type Data_ = (MetaData, Access_);
+    public type Data_ = {
+        metadata    : MetaData;
+        var minting : Nat;
+        access      : Access_;
+    };
 
     public module Data = {
         public func metadata(data : Data) : MetaData = data;
 
-        public func toStable((meta, access_) : Data_) : Data = {
-            accessType  = Access.toStable(access_);
-            description = meta.description;
-            details     = meta.details;
-            endsAt      = meta.endsAt;
-            name        = meta.name;
-            price       = meta.price;
-            startsAt    = meta.startsAt;
+        public func toStable({ metadata; access } : Data_) : Data = {
+            accessType  = Access.toStable(access);
+            description = metadata.description;
+            details     = metadata.details;
+            endsAt      = metadata.endsAt;
+            name        = metadata.name;
+            price       = metadata.price;
+            startsAt    = metadata.startsAt;
         };
 
-        public func fromStable(data : Data) : Data_ = (
-            metadata(data),
-            Access.fromStable(data.accessType)
-        );
+        public func fromStable(data : Data) : Data_ = {
+            metadata    = metadata(data);
+            var minting = 0;
+            access      = Access.fromStable(data.accessType);
+        };
     };
 
     public type CollectionDetails = {

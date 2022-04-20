@@ -11,6 +11,9 @@ export interface MockLedger {
   'mint' : (
       arg_0: { 'to' : AccountIdentifier__1, 'amount' : Tokens },
     ) => Promise<BlockIndex>,
+  'mintAll' : (
+      arg_0: Array<{ 'to' : AccountIdentifier__1, 'amount' : Tokens }>,
+    ) => Promise<BlockIndex>,
   'reset' : () => Promise<undefined>,
   'transfer' : (arg_0: TransferArgs) => Promise<TransferResult>,
   'zeroAccount' : (arg_0: Principal) => Promise<AccountIdentifier>,
