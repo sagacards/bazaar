@@ -171,6 +171,8 @@ shared({caller}) actor class Rex(
         caller : Principal,
         revert : () -> ()
     ) : async Result.Result<(), Interface.MintError> {
+        if (amount <= 10_000) return #ok;
+
         try (switch (await ledger.transfer({
             memo            = 0;
             amount          = { e8s = amount - 10_000};
