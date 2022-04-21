@@ -1,10 +1,25 @@
 import { assert } from "chai";
 import { nftPrincipal } from "../lib";
-import { eventData } from "./events.test";
 import { admin, mint, users } from "./accounts";
 
+const time = BigInt(Date.now());
+export const eventData = {
+    startsAt: time,
+    endsAt: time * 2n,
+    name: "test1",
+    description: "",
+    details: {
+        descriptionMarkdownUrl: "",
+        iconImageUrl: "",
+        bannerImageUrl: "",
+        previewImageUrl: "",
+    },
+    accessType: { "Public": null },
+    price: { "e8s": 0n },
+};
 
-describe("Mint", () => {
+
+describe("Free", () => {
     const user = users[0];
 
     before(async () => {
@@ -30,25 +45,10 @@ describe("Mint", () => {
     it("Check balances after mint.", async () => {
         const account = await user.launchpad.getPersonalAccount();
         const balance = await user.ledger.account_balance({ account });
-        assert.equal(balance.e8s, 99_00_000_000n);
+        assert.equal(balance.e8s, 100_00_000_000n);
 
         const nftAccount = await user.nft.getPersonalAccount();
         const nftBalance = await user.ledger.account_balance({ account: nftAccount });
-        assert.equal(nftBalance.e8s, 99_990_000n)
-    });
-    it("Mint, but NFT traps.", async () => {
-        await admin.nft.toggleTrap(true);
-        const err = await user.launchpad.mint(nftPrincipal, 0n);
-        assert.isTrue("err" in err);
-        assert.isTrue("Refunded" in (<{ "err": object }>err).err)
-        await admin.nft.toggleTrap(false);
-    });
-    it("Check whether price was refunded...", async () => {
-        const account = await user.launchpad.getPersonalAccount();
-        const balance = await user.ledger.account_balance({ account });
-        assert.equal(balance.e8s, 99_00_000_000n);
-        const minting = await user.launchpad.currentlyMinting(nftPrincipal, 0n);
-        assert.isTrue("ok" in minting);
-        assert.equal((<{ "ok": bigint }>minting).ok, 0n);
+        assert.equal(nftBalance.e8s, 0n);
     });
 });
