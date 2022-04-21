@@ -25,8 +25,9 @@ module {
         AccountIdentifier.fromPrincipal(canisterId, ?subAccount);
     };
 
-    public let toText   = AccountIdentifier.toText;
-    public let fromText = AccountIdentifier.fromText;
+    public let toText        = AccountIdentifier.toText;
+    public let fromText      = AccountIdentifier.fromText;
+    public let fromPrincipal = AccountIdentifier.fromPrincipal;
 
     // Converts the given principal to a sub account (32 bytes).
     // First 4 bytes are the checksum of the SHA224 hash of the principal.
