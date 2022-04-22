@@ -3,7 +3,7 @@ import { admin, users } from "./accounts";
 import { nftPrincipal } from "../lib";
 import { trap } from "./utils/trap";
 
-const time = BigInt(Date.now());
+const time = BigInt(Date.now()) * 1_000_000n;
 export const eventData = {
     startsAt: time,
     endsAt: time * 2n,

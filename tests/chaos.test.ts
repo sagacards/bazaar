@@ -4,7 +4,7 @@ import { nftPrincipal } from "../lib";
 import { Allowlist, MintError, MintResult } from "../lib/declarations/bazaar/bazaar.did.d";
 import { admin, mintAll, users } from "./accounts";
 
-const time = BigInt(Date.now());
+const time = BigInt(Date.now()) * 1_000_000n;
 const spots: Allowlist = users.map((user) => [user.principal, [2n]]);
 const eventData = {
     startsAt: time,

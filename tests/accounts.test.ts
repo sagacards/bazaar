@@ -2,7 +2,6 @@ import { assert } from "chai";
 import { admin, users } from "./accounts";
 import { getAccountIdentifier } from "../lib/keys";
 
-
 describe("Ledger", () => {
     const user = users[0];
     after(async () => {

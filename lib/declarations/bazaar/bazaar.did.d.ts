@@ -51,7 +51,9 @@ export interface Data {
 }
 export type Error = { 'NotInAllowlist' : null } |
   { 'TokenNotFound' : Principal } |
-  { 'IndexNotFound' : bigint };
+  { 'IndexNotFound' : bigint } |
+  { 'AlreadyOver' : Time } |
+  { 'NotStarted' : Time };
 export type Event = [Principal, Data, bigint];
 export type EventName = string;
 export type Events = Array<Event>;
@@ -131,9 +133,11 @@ export interface Rex {
   'getEventsOfToken' : (arg_0: Principal) => Promise<Array<Data>>,
   'getOwnEvents' : () => Promise<Array<Data>>,
   'getPersonalAccount' : () => Promise<AccountIdentifier>,
+  'getTestTime' : () => Promise<Time>,
   'mint' : (arg_0: Principal, arg_1: bigint) => Promise<MintResult>,
   'removeAdmin' : (arg_0: Principal) => Promise<undefined>,
   'removeEvent' : (arg_0: Principal, arg_1: bigint) => Promise<undefined>,
+  'setTestTime' : (arg_0: [] | [Time]) => Promise<undefined>,
   'transfer' : (arg_0: Tokens, arg_1: AccountIdentifier) => Promise<
       TransferResult
     >,

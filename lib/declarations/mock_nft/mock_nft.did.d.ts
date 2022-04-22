@@ -21,7 +21,9 @@ export interface Data {
 }
 export type Error = { 'NotInAllowlist' : null } |
   { 'TokenNotFound' : Principal } |
-  { 'IndexNotFound' : bigint };
+  { 'IndexNotFound' : bigint } |
+  { 'AlreadyOver' : Time } |
+  { 'NotStarted' : Time };
 export type EventName = string;
 export type MintError = { 'NoneAvailable' : null } |
   { 'TryCatchTrap' : string };

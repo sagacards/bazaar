@@ -3,7 +3,6 @@ import { nftPrincipal } from "../lib";
 import { eventData } from "./events.test";
 import { admin, mint, users } from "./accounts";
 
-
 describe("Mint", () => {
     const user = users[0];
 

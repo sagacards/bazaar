@@ -26,6 +26,8 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
     'NotInAllowlist' : IDL.Null,
     'TokenNotFound' : IDL.Principal,
     'IndexNotFound' : IDL.Nat,
+    'AlreadyOver' : Time,
+    'NotStarted' : Time,
   });
   const Result__1_1 = IDL.Variant({ 'ok' : IDL.Nat, 'err' : Error });
   const Event = IDL.Tuple(IDL.Principal, Data, IDL.Nat);
@@ -169,9 +171,11 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
     'getEventsOfToken' : IDL.Func([IDL.Principal], [IDL.Vec(Data)], ['query']),
     'getOwnEvents' : IDL.Func([], [IDL.Vec(Data)], ['query']),
     'getPersonalAccount' : IDL.Func([], [AccountIdentifier], ['query']),
+    'getTestTime' : IDL.Func([], [Time], []),
     'mint' : IDL.Func([IDL.Principal, IDL.Nat], [MintResult], []),
     'removeAdmin' : IDL.Func([IDL.Principal], [], ['oneway']),
     'removeEvent' : IDL.Func([IDL.Principal, IDL.Nat], [], ['oneway']),
+    'setTestTime' : IDL.Func([IDL.Opt(Time)], [], ['oneway']),
     'transfer' : IDL.Func([Tokens, AccountIdentifier], [TransferResult], []),
     'updateEvent' : IDL.Func([IDL.Nat, Data], [Result], []),
   });
