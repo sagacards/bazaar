@@ -3,20 +3,27 @@ import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
+import Time "mo:base/Time";
 
 import Ledger "../Ledger";
 
 module {
     public type Error = {
+        /// The caller is not in the allowlist.
         #NotInAllowlist;
-        #TokenNotFound : Principal;
-        #IndexNotFound : Nat;
+        /// Indicates that the given token was not found.
+        #TokenNotFound : (token : Principal);
+        /// Indicates that the given index was not found for the event.
+        #IndexNotFound : (index : Nat);
+        /// Indicates that the event did not start yet.
+        #NotStarted : (dt : Time.Time);
+        /// Indicates that the event is already over.
+        #AlreadyOver : (dt : Time.Time);
     };
 
     public type Result<T> = Result.Result<T, Error>;
 
     // These are just type to make the code more readable...
-    private type Time      = Int;
     private type EventName = Text;
     private type Spots     = ?Int;
     private type URL       = Text;
@@ -245,13 +252,19 @@ module {
         // Description of the event.
         description : Text;
         // Start of the event.
-        startsAt    : Time;
+        startsAt    : Time.Time;
         // End of the event.
-        endsAt      : Time;
+        endsAt      : Time.Time;
         // Price of 1 token.
         price       : Ledger.Tokens;
         // The details of the collection.
         details     : CollectionDetails;
+    };
+
+    public func inEventPeriod({ startsAt; endsAt } : MetaData, now : Time.Time) : Result.Result<(), Error> {
+        if (now < startsAt) return #err(#NotStarted(startsAt - now));
+        if (endsAt <= now)  return #err(#AlreadyOver(now - endsAt));
+        #ok;
     };
 
     public type Data = MetaData and {

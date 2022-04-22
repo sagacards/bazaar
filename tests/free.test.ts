@@ -2,7 +2,7 @@ import { assert } from "chai";
 import { nftPrincipal } from "../lib";
 import { admin, mint, users } from "./accounts";
 
-const time = BigInt(Date.now());
+const time = BigInt(Date.now()) * 1_000_000n;
 export const eventData = {
     startsAt: time,
     endsAt: time * 2n,

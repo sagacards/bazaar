@@ -4,7 +4,7 @@ import { Allowlist } from "../lib/declarations/bazaar/bazaar.did.d";
 import { admin, mintAll, users } from "./accounts";
 import { isOk } from "./utils/result";
 
-const time = BigInt(Date.now());
+const time = BigInt(Date.now()) * 1_000_000n;
 const spots : Allowlist = [
     [users[0].principal, [-1n]],
     [users[1].principal, [2n]],

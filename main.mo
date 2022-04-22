@@ -5,6 +5,7 @@ import HashMap "mo:base/HashMap";
 import List "mo:base/List";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
+import Time "mo:base/Time";
 
 import Canistergeek "mo:canistergeek/canistergeek";
 
@@ -18,6 +19,22 @@ shared({caller}) actor class Rex(
     LEDGER_ID : Text,
 ) : async Interface.Main = this {
     private let ledger : Ledger.Interface = actor(LEDGER_ID);
+
+    // To be able to test time-based events, we need to be able to manipulate time. This value should always be `null` 
+    // in production, otherwise we will be stuck in time.
+    private var testTime : ?Time.Time = null;
+
+    private func now() : Time.Time = switch (testTime) {
+        case (null) Time.now();
+        case (? tt) tt;  
+    };
+
+    public func getTestTime() : async Time.Time { now() };
+
+    public shared({caller}) func setTestTime(tt : ?Time.Time) {
+        isAdmin(caller);
+        testTime := tt;
+    };
 
     /// List of admins.
     private stable var admins : List.List<Principal> = ?(caller, null);
@@ -244,6 +261,10 @@ shared({caller}) actor class Rex(
         let data = switch (Events.Events.getEventIndexData_(events_, token, index)) {
             case (#err(e))   return #err(#Events(e));
             case (#ok(data)) data;
+        };
+        switch (Events.inEventPeriod(data.metadata, now())) {
+            case (#err(e)) return #err(#Events(e));
+            case (#ok) {};
         };
         let price = data.metadata.price;
         switch (Events.Access.removeSpot(data.access, caller)) {

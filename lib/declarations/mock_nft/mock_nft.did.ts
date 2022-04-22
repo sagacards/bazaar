@@ -27,6 +27,8 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
     'NotInAllowlist' : IDL.Null,
     'TokenNotFound' : IDL.Principal,
     'IndexNotFound' : IDL.Nat,
+    'AlreadyOver' : Time,
+    'NotStarted' : Time,
   });
   const Result__1 = IDL.Variant({ 'ok' : IDL.Null, 'err' : Error });
   const MintError = IDL.Variant({
