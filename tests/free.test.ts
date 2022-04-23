@@ -1,23 +1,8 @@
 import { assert } from "chai";
 import { nftPrincipal } from "../lib";
 import { admin, mint, users } from "./accounts";
-
-const time = BigInt(Date.now()) * 1_000_000n;
-export const eventData = {
-    startsAt: time,
-    endsAt: time * 2n,
-    name: "test1",
-    description: "",
-    details: {
-        descriptionMarkdownUrl: "",
-        iconImageUrl: "",
-        bannerImageUrl: "",
-        previewImageUrl: "",
-    },
-    accessType: { "Public": null },
-    price: { "e8s": 0n },
-};
-
+import { eventData } from "./events.test";
+import { isOk } from "./utils/result";
 
 describe("Free", () => {
     const user = users[0];
@@ -25,7 +10,10 @@ describe("Free", () => {
     before(async () => {
         await mint(user, 100_00_000_000n);
 
-        let i = await admin.nft.launchpadEventCreate(eventData);
+        let i = await admin.nft.launchpadEventCreate({
+            ...eventData,
+            price: { "e8s": 0n }
+        });
         assert.equal(i, 0n);
     });
     after(async () => {
@@ -35,9 +23,8 @@ describe("Free", () => {
     });
 
     it("Mint an NFT...", async () => {
-        const tokenIndex = await user.launchpad.mint(nftPrincipal, 0n);
-        assert.isTrue("ok" in tokenIndex);
-        assert.equal((<{ "ok": bigint }>tokenIndex).ok, 0n);
+        const tokenIndex = isOk(await user.launchpad.mint(nftPrincipal, 0n));
+        assert.equal(tokenIndex, 0n);
         const balance = await user.nft.balance();
         assert.equal(balance.length, 1);
         assert.equal(balance[0], 0n);

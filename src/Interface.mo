@@ -22,8 +22,6 @@ module Interface {
         #Refunded;
         /// Describes an event error;
         #Events : Events.Error;
-        /// Indicates that you are not in the allowlist and are not allowed to mint.
-        #NoMintingSpot;
         /// Indicates that no more NFTs are available.
         #NoneAvailable;
         /// Indicates that an external services trapped...
@@ -32,11 +30,18 @@ module Interface {
 
     /// 🟢 Public functions.
     public type Account = actor {
-        getAllowlistSpots : query (token : Principal, index : Nat) -> async Result.Result<Int, Events.Error>;
+        // Returns the amount of spots the caller has for the given event.
+        getAllowlistSpots : shared (token : Principal, index : Nat) -> async Result.Result<Int, Events.Error>;
+        // Returns the personal canister account of the caller.
         getPersonalAccount : query () -> async Ledger.AccountIdentifier;
+        // Returns the balance of the canister account.
         balance : shared () -> async Ledger.Tokens;
+        // Transfers the specified amount from the canister account to the given `to` account.
         transfer : shared (amount : Ledger.Tokens, to : Ledger.AccountIdentifier) -> async Ledger.TransferResult;
+        // Mint endpoint for the given token.
+        // @pre: sufficient funds/supply, specified by the event.
         mint : shared (token : Principal, index : Nat) -> async MintResult;
+        // The total amount of people that are currently minting for a given event.
         currentlyMinting : query (token : Principal, index : Nat) -> async Result.Result<Nat, Events.Error>;
     };
 

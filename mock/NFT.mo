@@ -15,8 +15,10 @@ shared({caller = owner}) actor class MockNFT(
 
     private stable var admins : List.List<Principal> = ?(owner, null);
 
-    private func isAdmin(caller : Principal) {
-        assert(List.find(admins, func (p : Principal) : Bool { p == caller }) != null);
+    private func isAdmin(caller : Principal) = assert(_isAdmin(caller));
+
+    private func _isAdmin(caller : Principal) : Bool {
+        List.find(admins, func (p : Principal) : Bool { p == caller }) != null;
     };
 
     public shared({caller}) func addAdmin(a : Principal) {
@@ -77,7 +79,7 @@ shared({caller = owner}) actor class MockNFT(
     );
 
     public shared({caller}) func launchpadMint(p : Principal) : async Result.Result<Nat, NFT.MintError> {
-        assert(caller == Principal.fromActor(lp));
+        assert(caller == Principal.fromActor(lp) or _isAdmin(caller));
         if (trap) assert(false);
 
         if (total <= i) return #err(#NoneAvailable);
@@ -96,6 +98,13 @@ shared({caller = owner}) actor class MockNFT(
 
     public query({caller}) func launchpadTotalAvailable(event : Nat) : async Nat {
         total - i;
+    };
+
+    public query func launchpadBalanceOf(user : Principal) : async Nat {
+        switch (ledger.get(user)) {
+            case (null)     0;
+            case (? buffer) buffer.size();
+        };
     };
 
     public query({caller}) func balance() : async [Nat] {

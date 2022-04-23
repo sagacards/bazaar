@@ -29,5 +29,5 @@ module {
         // @traps   : not authorized.
         // @err     : no nfts left...
         launchpadMint : shared (to : Principal) -> async Result.Result<Nat, MintError>;
-    };
+    } and Events.BalanceInterface;
 };

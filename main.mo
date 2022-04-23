@@ -132,10 +132,10 @@ shared({caller}) actor class Rex(
   
     // 🟢 PUBLIC
 
-    public query({caller}) func getAllowlistSpots(token : Principal, index : Nat) : async Result.Result<Int, Events.Error> {
+    public shared({caller}) func getAllowlistSpots(token : Principal, index : Nat) : async Result.Result<Int, Events.Error> {
         switch (Events.Events.getEventIndexData_(events_, token, index)) {
             case (#err(e))         #err(e);
-            case (#ok({ access })) #ok(Events.Access.getSpots(access, caller));
+            case (#ok({ access })) #ok(await Events.Access.getSpots(access, caller));
         };
     };
 
@@ -212,7 +212,7 @@ shared({caller}) actor class Rex(
     };
 
     private func mintToken(
-        token : Principal, caller : Principal, amount : Ledger.Tokens,
+        token : Principal, caller : Principal,
         data : Events.Data_, revert : () -> ()
     ) : async Interface.MintResult {
         let t : NFT.Interface = actor(Principal.toText(token));
@@ -229,7 +229,7 @@ shared({caller}) actor class Rex(
                 //       maybe this can be solved by a queue + retrying? 
                 switch (await ledger.transfer({
                     memo            = 0;
-                    amount;
+                    amount          = data.metadata.price;
                     fee             = { e8s = 10_000 };
                     // From the account of the token.
                     from_subaccount = ?Blob.fromArray(AccountIdentifier.principal2SubAccount(token));
@@ -266,10 +266,9 @@ shared({caller}) actor class Rex(
             case (#err(e)) return #err(#Events(e));
             case (#ok) {};
         };
-        let price = data.metadata.price;
-        switch (Events.Access.removeSpot(data.access, caller)) {
+        switch (await Events.Access.removeSpot(data.access, caller)) {
             case (#err(e)) return #err(#Events(e));
-            case (#ok(_))  {};
+            case (#ok) {};
         };
 
         data.minting += 1;
@@ -282,11 +281,11 @@ shared({caller}) actor class Rex(
             case (#ok(a))  a;
             case (#err(e)) return #err(e);
         };
-        switch (await buy(price, token, caller, revert)) {
+        switch (await buy(data.metadata.price, token, caller, revert)) {
             case (#ok)  {};
             case (#err(e)) return #err(e);
         };
-        await mintToken(token, caller, price, data, revert);
+        await mintToken(token, caller, data, revert);
     };
 
     // 🚀 LAUNCHPAD

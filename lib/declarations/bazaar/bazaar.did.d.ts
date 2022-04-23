@@ -1,5 +1,6 @@
 import type { Principal } from '@dfinity/principal';
 export type Access = { 'Private' : Allowlist } |
+  { 'Holders' : HolderAccess } |
   { 'Public' : null };
 export type AccountIdentifier = Array<number>;
 export type Allowlist = Array<[Principal, Spots]>;
@@ -77,6 +78,11 @@ export interface GetMetricsParameters {
   'granularity' : MetricsGranularity,
   'dateFromMillis' : bigint,
 }
+export interface HolderAccess {
+  'canisters' : Array<Principal>,
+  'allowType' : HolderAllowType,
+}
+export type HolderAllowType = { 'Unlimited' : null };
 export interface HourlyMetricsData {
   'updateCalls' : UpdateCallsAggregatedData,
   'canisterHeapMemorySize' : CanisterHeapMemoryAggregatedData,
@@ -90,7 +96,6 @@ export type MetricsGranularity = { 'hourly' : null } |
 export type MintError = { 'NoneAvailable' : null } |
   { 'Refunded' : null } |
   { 'TryCatchTrap' : string } |
-  { 'NoMintingSpot' : null } |
   { 'Transfer' : TransferError } |
   { 'Events' : Error };
 export type MintResult = { 'ok' : bigint } |

@@ -1,8 +1,9 @@
 import { assert } from "chai";
 import { nftPrincipal } from "../lib";
-import { time, eventData } from "./events.test";
+import { eventData } from "./events.test";
 import { admin, mint, users } from "./accounts";
 import { MintError, Error } from "../lib/declarations/bazaar/bazaar.did.d";
+import { isOk } from "./utils/result";
 
 describe("Time", () => {
     const user = users[0];
@@ -21,7 +22,7 @@ describe("Time", () => {
     });
 
     it("Try to mint before start.", async () => {
-        await admin.launchpad.setTestTime([time - 1n]) // 1 nsec before start.
+        await admin.launchpad.setTestTime([eventData.startsAt - 1n]) // 1 nsec before start.
 
         const result = await user.launchpad.mint(nftPrincipal, 0n);
         assert.isTrue("err" in result);
@@ -32,17 +33,16 @@ describe("Time", () => {
         assert.equal((<{ "NotStarted": bigint }>eErr).NotStarted, 1n);
     });
     it("Mint during event.", async () => {
-        await admin.launchpad.setTestTime([time])
+        await admin.launchpad.setTestTime([eventData.startsAt])
 
-        const tokenIndex = await user.launchpad.mint(nftPrincipal, 0n);
-        assert.isTrue("ok" in tokenIndex);
-        assert.equal((<{ "ok": bigint }>tokenIndex).ok, 0n);
+        const tokenIndex = isOk(await user.launchpad.mint(nftPrincipal, 0n));
+        assert.equal(tokenIndex, 0n);
         const balance = await user.nft.balance();
         assert.equal(balance.length, 1);
         assert.equal(balance[0], 0n);
     });
     it("Try to mint after end.", async () => {
-        await admin.launchpad.setTestTime([time * 2n]) // The end of the event.
+        await admin.launchpad.setTestTime([eventData.endsAt]) // The end of the event.
 
         const result = await user.launchpad.mint(nftPrincipal, 0n);
         assert.isTrue("err" in result);

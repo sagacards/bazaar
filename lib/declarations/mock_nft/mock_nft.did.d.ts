@@ -1,5 +1,6 @@
 import type { Principal } from '@dfinity/principal';
 export type Access = { 'Private' : Allowlist } |
+  { 'Holders' : HolderAccess } |
   { 'Public' : null };
 export type AccountIdentifier = Array<number>;
 export type Allowlist = Array<[Principal, Spots]>;
@@ -25,6 +26,11 @@ export type Error = { 'NotInAllowlist' : null } |
   { 'AlreadyOver' : Time } |
   { 'NotStarted' : Time };
 export type EventName = string;
+export interface HolderAccess {
+  'canisters' : Array<Principal>,
+  'allowType' : HolderAllowType,
+}
+export type HolderAllowType = { 'Unlimited' : null };
 export type MintError = { 'NoneAvailable' : null } |
   { 'TryCatchTrap' : string };
 export interface MockNFT {
@@ -32,6 +38,7 @@ export interface MockNFT {
   'balance' : () => Promise<Array<bigint>>,
   'getAdmins' : () => Promise<Array<Principal>>,
   'getPersonalAccount' : () => Promise<AccountIdentifier>,
+  'launchpadBalanceOf' : (arg_0: Principal) => Promise<bigint>,
   'launchpadEventCreate' : (arg_0: Data) => Promise<bigint>,
   'launchpadEventUpdate' : (arg_0: bigint, arg_1: Data) => Promise<Result__1>,
   'launchpadMint' : (arg_0: Principal) => Promise<Result>,

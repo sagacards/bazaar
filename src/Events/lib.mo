@@ -48,17 +48,16 @@ module {
             list.vals(), list.size(), Principal.equal, Principal.hash
         );
 
-        public func removeSpot(list_ : Allowlist_, user : Principal) : Result<Int> {
+        public func removeSpot(list_ : Allowlist_, user : Principal) : Result<()> {
             ignore do ? {
                 let spots = list_.get(user)!!;
-                if (spots < 0)  return #ok(-1);
+                if (spots < 0)  return #ok;
                 if (spots == 0) return #err(#NotInAllowlist);
-                let new = spots - 1;
-                switch (new) {
+                switch (spots - 1) {
                     case (0)     list_.delete(user);
                     case (spots) list_.put(user, ?spots);
                 };
-                return #ok(new);
+                return #ok;
             };
             #err(#NotInAllowlist);
         };
@@ -81,43 +80,90 @@ module {
         #Public;
         // Denotes an event with limited access.
         #Private : Allowlist;
+        // Denotes an event with limited access to holders of a certain NFT.
+        #Holders : HolderAccess;
+    };
+
+    public type BalanceInterface = actor {
+        // Returns the amount of NFTs of the given user.
+        launchpadBalanceOf : query (user : Principal) -> async Nat;
+    };
+
+    public type HolderAccess = {
+        canisters : [Principal];
+        allowType : HolderAllowType;
+    };
+
+    public type HolderAllowType = {
+        // Indicates that any NFT provides you unlimited spots.
+        #Unlimited;
     };
 
     public type Access_ = {
         #Public;
         #Private : Allowlist_;
+        #Holders : HolderAccess;
     };
 
     public module Access = {
         public func toStable(access_ : Access_) : Access = switch (access_) {
-            case (#Public)        #Public;
-            case (#Private(list)) #Private(Allowlist.toStable(list));
+            case (#Public)          #Public;
+            case (#Private(list))   #Private(Allowlist.toStable(list));
+            case (#Holders(access)) #Holders(access);
         };
 
         public func fromStable(access : Access) : Access_ = switch (access) {
-            case (#Public)        #Public;
-            case (#Private(list)) #Private(Allowlist.fromStable(list));
+            case (#Public)          #Public;
+            case (#Private(list))   #Private(Allowlist.fromStable(list));
+            case (#Holders(access)) #Holders(access);
         };
 
-        public func getSpots(access_ : Access_, user : Principal) : Int = switch (access_) {
-            case (#Public)        -1;
-            case (#Private(list)) switch (list.get(user)) {
-                case (null)    0;
-                case (? spots) switch (spots) {
+        public func getSpots(access_ : Access_, user : Principal) : async Int {
+            switch (access_) {
+                case (#Public)        -1;
+                case (#Private(list)) switch (list.get(user)) {
                     case (null)    0;
-                    case (? spots) spots;
+                    case (? spots) switch (spots) {
+                        case (null)    0;
+                        case (? spots) spots;
+                    };
+                };
+                case (#Holders(access)) switch (access.allowType) {
+                    case (#Unlimited) {
+                        for (cId in access.canisters.vals()) {
+                            let c : BalanceInterface = actor(Principal.toText(cId));
+                            let amount = try (await c.launchpadBalanceOf(user)) catch(_) { 0 };
+                            if (amount != 0) return -1;
+                        };
+                        0; // No matches.
+                    };
                 };
             };
         };
 
-        public func removeSpot(access_ : Access_, user : Principal) : Result<Int> = switch (access_) {
-            case (#Public)        #ok(-1);
-            case (#Private(list)) Allowlist.removeSpot(list, user);
+        public func removeSpot(access_ : Access_, user : Principal) : async Result<()> {
+            switch (access_) {
+                case (#Public)        #ok;
+                case (#Private(list)) Allowlist.removeSpot(list, user);
+                case (#Holders(access)) switch (access.allowType) {
+                    case (#Unlimited) {
+                        for (cId in access.canisters.vals()) {
+                            let c : BalanceInterface = actor(Principal.toText(cId));
+                            let amount = try (await c.launchpadBalanceOf(user)) catch(_) { 0 };
+                            if (amount != 0) return #ok;
+                        };
+                        #err(#NotInAllowlist);
+                    };
+                };
+            };
         };
 
         public func addSpot(access_ : Access_, user : Principal) = switch (access_) {
             case (#Public) {};
             case (#Private(list)) Allowlist.addSpot(list, user);
+            case (#Holders(access)) switch (access.allowType) {
+                case (#Unlimited) {};
+            };
         };
     };
 

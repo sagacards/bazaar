@@ -3,23 +3,9 @@ import { assert } from "chai";
 import { nftPrincipal } from "../lib";
 import { Allowlist, MintError, MintResult } from "../lib/declarations/bazaar/bazaar.did.d";
 import { admin, mintAll, users } from "./accounts";
+import { eventData } from './events.test';
 
-const time = BigInt(Date.now()) * 1_000_000n;
 const spots: Allowlist = users.map((user) => [user.principal, [2n]]);
-const eventData = {
-    startsAt: time,
-    endsAt: time * 2n,
-    name: "test1",
-    description: "",
-    details: {
-        descriptionMarkdownUrl: "",
-        iconImageUrl: "",
-        bannerImageUrl: "",
-        previewImageUrl: "",
-    },
-    accessType: { "Private": spots },
-    price: { "e8s": 1_00_000_000n },
-};
 
 describe("Minting Chaos", () => {
     if (!process.env.CHAOS) return;
@@ -27,7 +13,10 @@ describe("Minting Chaos", () => {
     before(async () => {
         await mintAll(users, 100_00_000_000n);
         await admin.nft.reset(25n);
-        let i = await admin.nft.launchpadEventCreate(eventData);
+        let i = await admin.nft.launchpadEventCreate({
+            ...eventData,
+            accessType: { "Private": spots }
+        });
         assert.equal(i, 0n);
     });
     after(async () => {
@@ -41,13 +30,13 @@ describe("Minting Chaos", () => {
             let batch = [];
             for (const user of users) batch.push(user.launchpad.mint(nftPrincipal, 0n));
             for (let i = 0; i < batch.length; i++) {
-                const b : MintResult = await batch[i];
+                const b: MintResult = await batch[i];
                 if ("err" in b) {
                     const err = (<{ 'err': MintError }>b).err;
                     console.log(err);
                 };
                 if ("ok" in b) {
-                    const tokenId = (<{ 'ok': bigint}>b).ok;
+                    const tokenId = (<{ 'ok': bigint }>b).ok;
                     console.log(tokenId);
                 };
             };

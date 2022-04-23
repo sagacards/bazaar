@@ -2,6 +2,7 @@ import { assert } from "chai";
 import { nftPrincipal } from "../lib";
 import { eventData } from "./events.test";
 import { admin, mint, users } from "./accounts";
+import { isOk } from "./utils/result";
 
 describe("Mint", () => {
     const user = users[0];
@@ -19,9 +20,8 @@ describe("Mint", () => {
     });
 
     it("Mint an NFT...", async () => {
-        const tokenIndex = await user.launchpad.mint(nftPrincipal, 0n);
-        assert.isTrue("ok" in tokenIndex);
-        assert.equal((<{ "ok": bigint }>tokenIndex).ok, 0n);
+        const tokenIndex = isOk(await user.launchpad.mint(nftPrincipal, 0n));
+        assert.equal(tokenIndex, 0n);
         const balance = await user.nft.balance();
         assert.equal(balance.length, 1);
         assert.equal(balance[0], 0n);
@@ -46,8 +46,7 @@ describe("Mint", () => {
         const account = await user.launchpad.getPersonalAccount();
         const balance = await user.ledger.account_balance({ account });
         assert.equal(balance.e8s, 99_00_000_000n);
-        const minting = await user.launchpad.currentlyMinting(nftPrincipal, 0n);
-        assert.isTrue("ok" in minting);
-        assert.equal((<{ "ok": bigint }>minting).ok, 0n);
+        const minting = isOk(await user.launchpad.currentlyMinting(nftPrincipal, 0n));
+        assert.equal(minting, 0n);
     });
 });

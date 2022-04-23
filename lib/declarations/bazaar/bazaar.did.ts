@@ -5,7 +5,16 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
   const EventName = IDL.Text;
   const Spots = IDL.Opt(IDL.Int);
   const Allowlist = IDL.Vec(IDL.Tuple(IDL.Principal, Spots));
-  const Access = IDL.Variant({ 'Private' : Allowlist, 'Public' : IDL.Null });
+  const HolderAllowType = IDL.Variant({ 'Unlimited' : IDL.Null });
+  const HolderAccess = IDL.Record({
+    'canisters' : IDL.Vec(IDL.Principal),
+    'allowType' : HolderAllowType,
+  });
+  const Access = IDL.Variant({
+    'Private' : Allowlist,
+    'Holders' : HolderAccess,
+    'Public' : IDL.Null,
+  });
   const URL = IDL.Text;
   const CollectionDetails = IDL.Record({
     'descriptionMarkdownUrl' : URL,
@@ -129,7 +138,6 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
     'NoneAvailable' : IDL.Null,
     'Refunded' : IDL.Null,
     'TryCatchTrap' : IDL.Text,
-    'NoMintingSpot' : IDL.Null,
     'Transfer' : TransferError,
     'Events' : Error,
   });
@@ -151,11 +159,7 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
       ),
     'getAdmins' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getAllEvents' : IDL.Func([], [Events], ['query']),
-    'getAllowlistSpots' : IDL.Func(
-        [IDL.Principal, IDL.Nat],
-        [Result__1],
-        ['query'],
-      ),
+    'getAllowlistSpots' : IDL.Func([IDL.Principal, IDL.Nat], [Result__1], []),
     'getCanisterLog' : IDL.Func(
         [IDL.Opt(CanisterLogRequest)],
         [IDL.Opt(CanisterLogResponse)],
