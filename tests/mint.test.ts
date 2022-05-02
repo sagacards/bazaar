@@ -2,6 +2,7 @@ import { assert } from "chai";
 import { nftPrincipal } from "../lib";
 import { eventData } from "./events.test";
 import { admin, mint, users } from "./accounts";
+import { trap } from "./utils/trap";
 
 describe("Mint", () => {
     const user = users[0];
@@ -34,6 +35,14 @@ describe("Mint", () => {
         const nftAccount = await user.nft.getPersonalAccount();
         const nftBalance = await user.ledger.account_balance({ account: nftAccount });
         assert.equal(nftBalance.e8s, 99_990_000n)
+    });
+    it("Check balances as an admin.", async () => {
+        await trap(user.launchpad.balances());
+        const balances = await admin.launchpad.balances();
+        assert.equal(balances.length, 1);
+        let [token, tokens] = balances[0];
+        assert.equal(token.toString(), nftPrincipal.toString());
+        assert.equal(tokens.e8s, 99_990_000n);
     });
     it("Mint, but NFT traps.", async () => {
         await admin.nft.toggleTrap(true);

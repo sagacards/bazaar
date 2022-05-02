@@ -114,6 +114,7 @@ export type Result__1_1 = { 'ok' : bigint } |
 export interface Rex {
   'addAdmin' : (arg_0: Principal) => Promise<undefined>,
   'balance' : () => Promise<Tokens>,
+  'balances' : () => Promise<Array<[Principal, Tokens]>>,
   'collectCanisterMetrics' : () => Promise<undefined>,
   'createEvent' : (arg_0: Data) => Promise<bigint>,
   'currentlyMinting' : (arg_0: Principal, arg_1: bigint) => Promise<

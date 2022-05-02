@@ -142,6 +142,7 @@ export const idlFactory : IDL.InterfaceFactory = ({ IDL }) => {
   const Rex = IDL.Service({
     'addAdmin' : IDL.Func([IDL.Principal], [], ['oneway']),
     'balance' : IDL.Func([], [Tokens], []),
+    'balances' : IDL.Func([], [IDL.Vec(IDL.Tuple(IDL.Principal, Tokens))], []),
     'collectCanisterMetrics' : IDL.Func([], [], []),
     'createEvent' : IDL.Func([Data], [IDL.Nat], []),
     'currentlyMinting' : IDL.Func(

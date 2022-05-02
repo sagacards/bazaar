@@ -11,6 +11,7 @@ module Interface {
         removeAdmin : shared (a : Principal) -> ();
         getAdmins : query () -> async [Principal];
         removeEvent: shared (token : Principal, index : Nat) -> ();
+        balances : shared () -> async [(Principal, Ledger.Tokens)];
     };
 
     public type MintResult = Result.Result<Nat, MintError>;
