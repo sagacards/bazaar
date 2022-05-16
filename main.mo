@@ -1,4 +1,5 @@
 import Blob "mo:base/Blob";
+import Buffer "mo:base/Buffer";
 import Cycles "mo:base/ExperimentalCycles";
 import Error "mo:base/Error";
 import HashMap "mo:base/HashMap";
@@ -93,6 +94,17 @@ shared({caller}) actor class Rex(
         isAdmin(caller);
         canistergeekMonitor.collectMetrics();
         Events.Events.remove(events_, token, index);
+    };
+
+    public shared({caller}) func balances() : async [(Principal, Ledger.Tokens)] {
+        isAdmin(caller);
+        let balances = Buffer.Buffer<(Principal, Ledger.Tokens)>(events_.size());
+        for (token in events_.keys()) {
+            let account = AccountIdentifier.getAccount(Principal.fromActor(this), token);
+            let balance = await ledger.account_balance({ account });
+            balances.add((token, balance));
+        };
+        balances.toArray();
     };
 
     // 👀 LOGGING & MONITORING
