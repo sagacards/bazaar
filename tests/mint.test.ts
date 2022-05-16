@@ -9,7 +9,11 @@ describe("Mint", () => {
     before(async () => {
         await mint(user, 100_00_000_000n);
 
-        let i = await admin.nft.launchpadEventCreate(eventData);
+        let i = await admin.nft.launchpadEventCreate({
+            ...eventData,
+            startsAt: 0n, // <=0: non time-gated
+            endsAt: 0n
+        });
         assert.equal(i, 0n);
     });
     after(async () => {
