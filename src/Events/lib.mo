@@ -262,8 +262,8 @@ module {
     };
 
     public func inEventPeriod({ startsAt; endsAt } : MetaData, now : Time.Time) : Result.Result<(), Error> {
-        if (now < startsAt) return #err(#NotStarted(startsAt - now));
-        if (endsAt <= now)  return #err(#AlreadyOver(now - endsAt));
+        if (0 < startsAt and now < startsAt) return #err(#NotStarted(startsAt - now));
+        if (0 < endsAt   and endsAt <= now)  return #err(#AlreadyOver(now - endsAt));
         #ok;
     };
 
